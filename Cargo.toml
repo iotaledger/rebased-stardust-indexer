@@ -15,3 +15,6 @@ diesel_migrations = { version = "2.2.0", features = ["sqlite"] }
 dotenvy = "0.15"
 iota-types = { git = "https://github.com/iotaledger/iota.git", tag = "v0.7.2-rc", version = "0.7.2-rc" }
 num_enum = "0.7.3"
+
+[dev-dependencies]
+iota-types = { git = "https://github.com/iotaledger/iota.git", tag = "v0.7.2-rc", version = "0.7.2-rc", features = ["test-utils"]}

@@ -12,7 +12,7 @@ use diesel::{
 };
 use num_enum::TryFromPrimitive;
 
-#[derive(Queryable, Selectable, Insertable)]
+#[derive(Clone, Debug, PartialEq, Eq, Queryable, Selectable, Insertable)]
 #[diesel(table_name = crate::schema::expiration_unlock_conditions)]
 #[diesel(check_for_backend(diesel::sqlite::Sqlite))]
 pub struct ExpirationUnlockCondition {
@@ -22,13 +22,24 @@ pub struct ExpirationUnlockCondition {
     pub object_id: IotaAddress,
 }
 
-#[derive(Queryable, Selectable, Insertable)]
+#[derive(Clone, Debug, PartialEq, Eq, Queryable, Selectable, Insertable)]
 #[diesel(table_name = crate::schema::objects)]
 #[diesel(check_for_backend(diesel::sqlite::Sqlite))]
 pub struct StoredObject {
     pub id: IotaAddress,
     pub object_type: ObjectType,
     pub contents: Vec<u8>,
+}
+
+#[cfg(test)]
+impl StoredObject {
+    fn random_for_testing() -> Self {
+        Self {
+            id: iota_types::base_types::IotaAddress::random_for_testing_only().into(),
+            object_type: ObjectType::Nft,
+            contents: Default::default(),
+        }
+    }
 }
 
 impl TryFrom<iota_types::object::Object> for StoredObject {
@@ -74,7 +85,9 @@ impl TryFrom<StoredObject> for iota_types::stardust::output::nft::NftOutput {
     }
 }
 
-#[derive(From, Into, Debug, PartialEq, Eq, FromSqlRow, AsExpression)]
+#[derive(
+    From, Into, PartialOrd, Ord, Debug, Copy, Clone, PartialEq, Eq, FromSqlRow, AsExpression,
+)]
 #[diesel(sql_type = diesel::sql_types::Binary)]
 pub struct IotaAddress(pub iota_types::base_types::IotaAddress);
 
@@ -134,5 +147,38 @@ impl FromSql<diesel::sql_types::Integer, diesel::sqlite::Sqlite> for ObjectType 
     fn from_sql(bytes: SqliteValue<'_, '_, '_>) -> diesel::deserialize::Result<Self> {
         let stored = u8::try_from(i32::from_sql(bytes)?)?;
         Ok(Self::try_from(stored)?)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use diesel::insert_into;
+
+    use super::*;
+    use crate::{db::run_migrations, schema::objects::dsl::*};
+
+    #[test]
+    fn stored_object_round_trip() {
+        let data = vec![
+            StoredObject::random_for_testing(),
+            StoredObject::random_for_testing(),
+        ];
+        let test_db = "stored_object_round_trip.db";
+        let mut connection = SqliteConnection::establish(test_db).unwrap();
+        run_migrations(&mut connection).unwrap();
+
+        let rows_inserted = insert_into(objects)
+            .values(&data)
+            .execute(&mut connection)
+            .unwrap();
+        assert_eq!(rows_inserted, 2);
+
+        let inserted = objects
+            .select(StoredObject::as_select())
+            .load(&mut connection)
+            .unwrap();
+        assert_eq!(inserted, data);
+        // clean-up test db
+        std::fs::remove_file(test_db).unwrap();
     }
 }
