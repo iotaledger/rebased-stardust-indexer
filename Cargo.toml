@@ -8,6 +8,7 @@ anyhow = "1.0.93"
 bcs = "0.1.6"
 derive_more = { version = "1.0.0", features = ["into", "from"] }
 diesel = { version = "2.2.0", features = ["sqlite", "returning_clauses_for_sqlite_3_35"] }
+diesel_migrations = { version = "2.2.0", features = ["sqlite"] }
 # build libsqlite3 as part of the build process
 # uncomment this line if you run into setup issues
 # libsqlite3-sys = { version = "0.30", features = ["bundled"] }
