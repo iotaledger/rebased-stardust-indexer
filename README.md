@@ -2,10 +2,24 @@
 
 A simple application indexing custom data from the stardust-migration objects.
 
-## Setup
+## Development
+
+### Setup
 
 1. [Install Diesel CLI][diesel-getting-started]
 2. Run `diesel setup`
+
+### Run the application
+
+```sh
+$ cargo run
+```
+
+### Run the tests
+
+```sh
+$ cargo test
+```
 
 ## Supported features
 
