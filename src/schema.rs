@@ -19,7 +19,4 @@ diesel::table! {
 
 diesel::joinable!(expiration_unlock_conditions -> objects (object_id));
 
-diesel::allow_tables_to_appear_in_same_query!(
-    expiration_unlock_conditions,
-    objects,
-);
+diesel::allow_tables_to_appear_in_same_query!(expiration_unlock_conditions, objects,);

@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1.0.93"
+axum = "0.7.9"
 bcs = "0.1.6"
 clap = { version = "4.5.21", features = ["derive", "env"] }
 derive_more = { version = "1.0.0", features = ["into", "from"] }
@@ -16,6 +17,11 @@ diesel_migrations = { version = "2.2.0", features = ["sqlite"] }
 dotenvy = "0.15"
 iota-types = { git = "https://github.com/iotaledger/iota.git", tag = "v0.7.2-rc", version = "0.7.2-rc" }
 num_enum = "0.7.3"
+serde = "1.0.215"
+thiserror = "2.0.3"
+tracing = "0.1.41"
+tracing-subscriber = "0.3.19"
+tokio = { version = "1.39.2", features = ["rt-multi-thread", "signal"] }
 
 [dev-dependencies]
 iota-types = { git = "https://github.com/iotaledger/iota.git", tag = "v0.7.2-rc", version = "0.7.2-rc", features = ["test-utils"]}
