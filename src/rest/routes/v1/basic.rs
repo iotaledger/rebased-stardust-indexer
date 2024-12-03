@@ -1,6 +1,7 @@
 use axum::{Extension, Router, routing::get};
 use diesel::{ExpressionMethods, QueryDsl, RunQueryDsl, SelectableHelper};
 use serde::Serialize;
+use tracing::error;
 
 use crate::{
     impl_into_response,
@@ -17,16 +18,19 @@ async fn basic(
     ExtractPath(extracted_id): ExtractPath<iota_types::base_types::IotaAddress>,
     Extension(state): Extension<StardustExtension>,
 ) -> Result<BasicResponse, ApiError> {
-    let mut conn = state
-        .connection_pool
-        .get_connection()
-        .map_err(|_| ApiError::ServiceUnavailable("Failed to get connection".to_string()))?;
+    let mut conn = state.connection_pool.get_connection().map_err(|e| {
+        error!("Failed to get connection: {}", e);
+        ApiError::ServiceUnavailable(format!("Failed to get connection: {}", e))
+    })?;
 
     let stored_object = objects
         .select(StoredObject::as_select())
         .filter(id.eq(IotaAddress(extracted_id)))
         .load::<StoredObject>(&mut conn)
-        .map_err(|err| ApiError::ServiceUnavailable(err.to_string()))?;
+        .map_err(|err| {
+            error!("Failed to load stored object: {}", err);
+            ApiError::InternalServerError
+        })?;
 
     if stored_object.is_empty() {
         return Err(ApiError::NotFound);
@@ -34,7 +38,7 @@ async fn basic(
 
     let basic_object =
         iota_types::stardust::output::basic::BasicOutput::try_from(stored_object[0].clone())
-            .map_err(|err| ApiError::ServiceUnavailable(err.to_string()))?;
+            .map_err(|err| ApiError::BadRequest(err.to_string()))?;
 
     Ok(BasicResponse {
         basic: basic_object,

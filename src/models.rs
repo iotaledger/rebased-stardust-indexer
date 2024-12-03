@@ -31,7 +31,6 @@ pub struct StoredObject {
     pub contents: Vec<u8>,
 }
 
-use iota_types::stardust::output::NftOutput;
 #[cfg(test)]
 use iota_types::{
     balance::Balance,
@@ -41,17 +40,17 @@ use iota_types::{
     gas_coin::GAS,
     id::UID,
     object::{Data, MoveObject, Object, Owner},
-    stardust::output::BasicOutput,
+    stardust::output::{basic::BasicOutput, nft::NftOutput},
     supported_protocol_versions::ProtocolConfig,
 };
 
 #[cfg(test)]
 impl StoredObject {
-    pub(crate) fn random_nft_for_testing() -> Self {
+    pub(crate) fn new_nft_for_testing() -> Self {
         let object = {
             let nft_output = iota_types::stardust::output::nft::NftOutput {
                 id: UID::new(ObjectID::random()),
-                balance: Balance::new(100),
+                balance: Balance::new(0),
                 native_tokens: Bag::default(),
                 storage_deposit_return: None,
                 timelock: None,
@@ -84,7 +83,7 @@ impl StoredObject {
         let object = {
             let basic_output = iota_types::stardust::output::basic::BasicOutput {
                 id: UID::new(ObjectID::random()),
-                balance: Balance::new(100),
+                balance: Balance::new(0),
                 native_tokens: Bag::default(),
                 storage_deposit_return: None,
                 timelock: None,
@@ -238,8 +237,8 @@ mod tests {
     #[test]
     fn stored_object_round_trip() {
         let data = vec![
-            StoredObject::random_nft_for_testing(),
-            StoredObject::random_nft_for_testing(),
+            StoredObject::new_nft_for_testing(),
+            StoredObject::new_nft_for_testing(),
         ];
         let test_db = "stored_object_round_trip.db";
         let mut connection = SqliteConnection::establish(test_db).unwrap();

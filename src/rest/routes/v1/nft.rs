@@ -1,6 +1,7 @@
 use axum::{Extension, Router, routing::get};
 use diesel::{ExpressionMethods, QueryDsl, RunQueryDsl, SelectableHelper};
 use serde::Serialize;
+use tracing::error;
 
 use crate::{
     impl_into_response,
@@ -16,16 +17,19 @@ async fn nft(
     ExtractPath(extracted_id): ExtractPath<iota_types::base_types::IotaAddress>,
     Extension(state): Extension<StardustExtension>,
 ) -> Result<NftResponse, ApiError> {
-    let mut conn = state
-        .connection_pool
-        .get_connection()
-        .map_err(|_| ApiError::ServiceUnavailable("Failed to get connection".to_string()))?;
+    let mut conn = state.connection_pool.get_connection().map_err(|e| {
+        error!("Failed to get connection: {}", e);
+        ApiError::ServiceUnavailable(format!("Failed to get connection: {}", e))
+    })?;
 
     let stored_object = objects
         .select(StoredObject::as_select())
         .filter(id.eq(IotaAddress(extracted_id)))
         .load::<StoredObject>(&mut conn)
-        .map_err(|err| ApiError::ServiceUnavailable(err.to_string()))?;
+        .map_err(|err| {
+            error!("Failed to load stored object: {}", err);
+            ApiError::InternalServerError
+        })?;
 
     if stored_object.is_empty() {
         return Err(ApiError::NotFound);
@@ -73,7 +77,7 @@ mod tests {
         let mut connection = pool.get_connection().unwrap();
 
         // Populate the database with a basic object
-        let stored_object = StoredObject::random_nft_for_testing();
+        let stored_object = StoredObject::new_nft_for_testing();
 
         let rows_inserted = insert_into(objects)
             .values(&vec![stored_object.clone()])
