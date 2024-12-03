@@ -31,14 +31,89 @@ pub struct StoredObject {
     pub contents: Vec<u8>,
 }
 
+use iota_types::stardust::output::NftOutput;
+#[cfg(test)]
+use iota_types::{
+    balance::Balance,
+    base_types::{ObjectID, SequenceNumber},
+    collection_types::Bag,
+    digests::TransactionDigest,
+    gas_coin::GAS,
+    id::UID,
+    object::{Data, MoveObject, Object, Owner},
+    stardust::output::BasicOutput,
+    supported_protocol_versions::ProtocolConfig,
+};
+
 #[cfg(test)]
 impl StoredObject {
-    fn random_for_testing() -> Self {
-        Self {
-            id: iota_types::base_types::IotaAddress::random_for_testing_only().into(),
-            object_type: ObjectType::Nft,
-            contents: Default::default(),
-        }
+    pub(crate) fn random_nft_for_testing() -> Self {
+        let object = {
+            let nft_output = iota_types::stardust::output::nft::NftOutput {
+                id: UID::new(ObjectID::random()),
+                balance: Balance::new(100),
+                native_tokens: Bag::default(),
+                storage_deposit_return: None,
+                timelock: None,
+                expiration: None,
+            };
+
+            let move_object = {
+                MoveObject::new_from_execution(
+                    NftOutput::tag(GAS::type_tag()).into(),
+                    SequenceNumber::default(),
+                    bcs::to_bytes(&nft_output).unwrap(),
+                    &ProtocolConfig::get_for_min_version(),
+                )
+                .unwrap()
+            };
+
+            Object::new_from_genesis(
+                Data::Move(move_object),
+                Owner::Shared {
+                    initial_shared_version: SequenceNumber::default(),
+                },
+                TransactionDigest::default(),
+            )
+        };
+
+        StoredObject::try_from(object.clone()).unwrap()
+    }
+
+    pub(crate) fn random_basic_for_testing() -> Self {
+        let object = {
+            let basic_output = iota_types::stardust::output::basic::BasicOutput {
+                id: UID::new(ObjectID::random()),
+                balance: Balance::new(100),
+                native_tokens: Bag::default(),
+                storage_deposit_return: None,
+                timelock: None,
+                expiration: None,
+                metadata: None,
+                tag: None,
+                sender: None,
+            };
+
+            let move_object = {
+                MoveObject::new_from_execution(
+                    BasicOutput::tag(GAS::type_tag()).into(),
+                    SequenceNumber::default(),
+                    bcs::to_bytes(&basic_output).unwrap(),
+                    &ProtocolConfig::get_for_min_version(),
+                )
+                .unwrap()
+            };
+
+            Object::new_from_genesis(
+                Data::Move(move_object),
+                Owner::Shared {
+                    initial_shared_version: SequenceNumber::default(),
+                },
+                TransactionDigest::default(),
+            )
+        };
+
+        StoredObject::try_from(object.clone()).unwrap()
     }
 }
 
@@ -126,9 +201,12 @@ impl TryFrom<&iota_types::object::ObjectInner> for ObjectType {
             anyhow::bail!("source object is not a Move object");
         };
         match (struct_tag.module.as_str(), struct_tag.name.as_str()) {
-            ("nft", "NftOutput") => Ok(Self::Nft),
-            ("basic", "BasicOutput") => Ok(Self::Basic),
-            _ => anyhow::bail!("not eligible type for indexing"),
+            ("nft_output", "NftOutput") => Ok(Self::Nft),
+            ("basic_output", "BasicOutput") => Ok(Self::Basic),
+            (a, b) => {
+                println!("{} {}", a, b);
+                anyhow::bail!("not eligible type for indexing");
+            }
         }
     }
 }
@@ -160,8 +238,8 @@ mod tests {
     #[test]
     fn stored_object_round_trip() {
         let data = vec![
-            StoredObject::random_for_testing(),
-            StoredObject::random_for_testing(),
+            StoredObject::random_nft_for_testing(),
+            StoredObject::random_nft_for_testing(),
         ];
         let test_db = "stored_object_round_trip.db";
         let mut connection = SqliteConnection::establish(test_db).unwrap();

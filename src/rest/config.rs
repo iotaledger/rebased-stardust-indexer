@@ -15,3 +15,12 @@ impl RestApiConfig {
         format!("{}:{}", self.bind_address, self.bind_port)
     }
 }
+
+impl Default for RestApiConfig {
+    fn default() -> Self {
+        Self {
+            bind_address: "0.0.0.0".to_string(),
+            bind_port: 3000,
+        }
+    }
+}

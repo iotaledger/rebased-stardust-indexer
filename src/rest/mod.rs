@@ -1,10 +1,7 @@
-use axum::{
-    Extension, Router, handler::HandlerWithoutStateExt, response::IntoResponse, routing::get,
-};
+use axum::{Extension, Router, response::IntoResponse};
 use tokio::{sync::oneshot, task::JoinHandle};
 use tracing::{error, info};
-pub mod error;
-mod extractors;
+
 use crate::{
     db::ConnectionPool,
     rest::{
@@ -13,7 +10,9 @@ use crate::{
 };
 
 pub mod config;
+pub mod error;
 mod extension;
+mod extractors;
 mod routes;
 
 pub(crate) fn spawn_rest_server(
@@ -22,10 +21,7 @@ pub(crate) fn spawn_rest_server(
     shutdown: oneshot::Receiver<()>,
 ) -> JoinHandle<()> {
     tokio::spawn(async move {
-        let app = Router::new()
-            .merge(filter_all())
-            .layer(Extension(Extension(StardustExtension { connection_pool })))
-            .fallback(fallback);
+        let app = build_app(connection_pool);
 
         let listener = tokio::net::TcpListener::bind(config.socket_addr())
             .await
@@ -45,6 +41,13 @@ pub(crate) fn spawn_rest_server(
             })
             .ok();
     })
+}
+
+fn build_app(connection_pool: ConnectionPool) -> Router {
+    Router::new()
+        .merge(filter_all())
+        .layer(Extension(StardustExtension { connection_pool }))
+        .fallback(fallback)
 }
 
 async fn fallback() -> impl IntoResponse {
