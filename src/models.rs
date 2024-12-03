@@ -1,3 +1,6 @@
+// Copyright (c) 2024 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 //! Rust models of the database relations.
 //!
 //! This module contains also conversion logic between the models

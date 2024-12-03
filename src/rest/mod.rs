@@ -1,3 +1,6 @@
+// Copyright (c) 2024 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 use axum::{Extension, Router, response::IntoResponse};
 use tokio::{sync::oneshot, task::JoinHandle};
 use tracing::{error, info};
