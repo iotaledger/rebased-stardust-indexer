@@ -1,10 +1,11 @@
+// Copyright (c) 2024 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 use axum::{Extension, Router, routing::get};
 use diesel::{ExpressionMethods, QueryDsl, RunQueryDsl, SelectableHelper};
 use serde::Serialize;
 use tracing::error;
 
-// Copyright (c) 2024 IOTA Stiftung
-// SPDX-License-Identifier: Apache-2.0
 use crate::{
     impl_into_response,
     models::{IotaAddress, StoredObject},

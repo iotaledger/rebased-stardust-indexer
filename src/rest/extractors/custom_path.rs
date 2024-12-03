@@ -12,7 +12,7 @@ use crate::rest::error::ApiError;
 
 // We define our own `Path` extractor that customizes the error from
 // `axum::extract::Path`
-pub struct ExtractPath<T>(pub T);
+pub(crate) struct ExtractPath<T>(pub T);
 
 #[async_trait]
 impl<S, T> FromRequestParts<S> for ExtractPath<T>

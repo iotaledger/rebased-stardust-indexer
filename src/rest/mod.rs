@@ -12,8 +12,8 @@ use crate::{
     },
 };
 
-pub mod config;
-pub mod error;
+pub(crate) mod config;
+pub(crate) mod error;
 mod extension;
 mod extractors;
 mod routes;

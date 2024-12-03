@@ -10,7 +10,7 @@ use serde::Serialize;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
-pub enum ApiError {
+pub(crate) enum ApiError {
     #[error("bad request: {0}")]
     BadRequest(String),
     #[error("not found")]
@@ -47,7 +47,7 @@ impl IntoResponse for ApiError {
 
 /// Describes the response body of a unsuccessful HTTP request.
 #[derive(Clone, Debug, Serialize)]
-pub struct ErrorBody {
+struct ErrorBody {
     pub error_code: String,
     pub error_message: String,
 }
