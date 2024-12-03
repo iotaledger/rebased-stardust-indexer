@@ -13,7 +13,7 @@ use crate::{
 };
 
 pub(crate) mod config;
-pub(crate) mod error;
+mod error;
 mod extension;
 mod extractors;
 mod routes;

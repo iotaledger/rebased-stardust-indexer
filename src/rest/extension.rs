@@ -5,5 +5,5 @@ use crate::db::ConnectionPool;
 
 #[derive(Clone)]
 pub(crate) struct StardustExtension {
-    pub connection_pool: ConnectionPool,
+    pub(crate) connection_pool: ConnectionPool,
 }
