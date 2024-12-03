@@ -205,10 +205,7 @@ impl TryFrom<&iota_types::object::ObjectInner> for ObjectType {
         match (struct_tag.module.as_str(), struct_tag.name.as_str()) {
             ("nft_output", "NftOutput") => Ok(Self::Nft),
             ("basic_output", "BasicOutput") => Ok(Self::Basic),
-            (a, b) => {
-                println!("{} {}", a, b);
-                anyhow::bail!("not eligible type for indexing");
-            }
+            _ => anyhow::bail!("not eligible type for indexing"),
         }
     }
 }
