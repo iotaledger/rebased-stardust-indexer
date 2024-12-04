@@ -12,7 +12,7 @@ use crate::{
     rest::{error::ApiError, extension::StardustExtension, extractors::custom_path::ExtractPath},
     schema::objects::{dsl::objects, id},
 };
-pub(crate) fn filter() -> Router {
+pub(crate) fn router() -> Router {
     Router::new().route("/nft/:address", get(nft))
 }
 

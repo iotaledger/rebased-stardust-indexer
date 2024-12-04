@@ -13,7 +13,7 @@ use crate::{
     schema::objects::dsl::*,
 };
 
-pub(crate) fn filter() -> Router {
+pub(crate) fn router() -> Router {
     Router::new().route("/basic/:address", get(basic))
 }
 

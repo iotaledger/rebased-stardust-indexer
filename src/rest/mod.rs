@@ -8,7 +8,7 @@ use tracing::{error, info};
 use crate::{
     db::ConnectionPool,
     rest::{
-        config::RestApiConfig, error::ApiError, extension::StardustExtension, routes::filter_all,
+        config::RestApiConfig, error::ApiError, extension::StardustExtension, routes::router_all,
     },
 };
 
@@ -38,17 +38,14 @@ pub(crate) fn spawn_rest_server(
                 info!("Shutdown signal received.");
             })
             .await
-            .map_err(|e| {
-                error!("Server encountered an error: {}", e);
-                e
-            })
+            .inspect_err(|e| error!("Server encountered an error: {e}"))
             .ok();
     })
 }
 
 fn build_app(connection_pool: ConnectionPool) -> Router {
     Router::new()
-        .merge(filter_all())
+        .merge(router_all())
         .layer(Extension(StardustExtension { connection_pool }))
         .fallback(fallback)
 }

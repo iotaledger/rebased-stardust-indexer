@@ -59,9 +59,9 @@ async fn main() -> anyhow::Result<()> {
     // TODO: Spawn synchronization logic
 
     // Spawn the REST server
-    if let Err(e) = spawn_rest_server(opts.rest_api_config, connection_pool, shutdown_rx).await {
-        error!("REST server terminated with error: {}", e);
-    }
+    _ = spawn_rest_server(opts.rest_api_config, connection_pool, shutdown_rx)
+        .await
+        .inspect_err(|e| error!("REST server terminated with error: {e}"));
 
     Ok(())
 }
