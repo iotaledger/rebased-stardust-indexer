@@ -3,6 +3,9 @@
 
 use clap::Args;
 
+const DEFAULT_BIND_ADDRESS: &str = "0.0.0.0";
+const DEFAULT_BIND_PORT: u16 = 3000;
+
 #[derive(Args, Debug, Clone)]
 pub struct RestApiConfig {
     #[arg(long, default_value = "0.0.0.0")]
@@ -22,8 +25,8 @@ impl RestApiConfig {
 impl Default for RestApiConfig {
     fn default() -> Self {
         Self {
-            bind_address: "0.0.0.0".to_string(),
-            bind_port: 3000,
+            bind_address: DEFAULT_BIND_ADDRESS.to_string(),
+            bind_port: DEFAULT_BIND_PORT,
         }
     }
 }

@@ -26,4 +26,4 @@ tokio = { version = "1.39.2", features = ["rt-multi-thread", "signal"] }
 [dev-dependencies]
 iota-types = { git = "https://github.com/iotaledger/iota.git", tag = "v0.7.2-rc", version = "0.7.2-rc", features = ["test-utils"]}
 reqwest = "0.12.9"
-serde_json = "1.0.133"
+

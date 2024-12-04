@@ -3,6 +3,7 @@
 
 use axum::{Extension, Router, routing::get};
 use diesel::{ExpressionMethods, QueryDsl, RunQueryDsl, SelectableHelper};
+use iota_types::stardust::output::basic::BasicOutput;
 use serde::Serialize;
 use tracing::error;
 
@@ -39,27 +40,22 @@ async fn basic(
         return Err(ApiError::NotFound);
     }
 
-    let basic_object =
-        iota_types::stardust::output::basic::BasicOutput::try_from(stored_object[0].clone())
-            .map_err(|err| ApiError::BadRequest(err.to_string()))?;
+    let basic_object = BasicOutput::try_from(stored_object[0].clone())
+        .map_err(|err| ApiError::BadRequest(err.to_string()))?;
 
-    Ok(BasicResponse {
-        basic: basic_object,
-    })
+    Ok(BasicResponse(basic_object))
 }
 
 #[derive(Clone, Debug, Serialize)]
-struct BasicResponse {
-    #[serde(flatten)]
-    basic: iota_types::stardust::output::basic::BasicOutput,
-}
+struct BasicResponse(BasicOutput);
 
 impl_into_response!(BasicResponse);
 
 #[cfg(test)]
 mod tests {
+    use bcs::from_bytes;
     use diesel::{RunQueryDsl, insert_into};
-    use serde_json::Value;
+    use iota_types::stardust::output::basic::BasicOutput;
     use tokio::sync::oneshot;
     use tracing::Level;
     use tracing_subscriber::FmtSubscriber;
@@ -86,6 +82,7 @@ mod tests {
 
         // Populate the database with a basic object
         let stored_object = StoredObject::random_basic_for_testing();
+        let basic_output: BasicOutput = from_bytes(&stored_object.contents).unwrap();
 
         let rows_inserted = insert_into(objects)
             .values(&vec![stored_object.clone()])
@@ -114,7 +111,7 @@ mod tests {
         ))
         .await?;
 
-        println!("{:?}", resp.json::<Value>().await.unwrap());
+        assert_eq!(resp.json::<BasicOutput>().await.unwrap(), basic_output);
 
         shutdown_tx.send(()).unwrap();
 

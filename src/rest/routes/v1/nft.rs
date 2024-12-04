@@ -3,6 +3,7 @@
 
 use axum::{Extension, Router, routing::get};
 use diesel::{ExpressionMethods, QueryDsl, RunQueryDsl, SelectableHelper};
+use iota_types::stardust::output::nft::NftOutput;
 use serde::Serialize;
 use tracing::error;
 
@@ -37,24 +38,22 @@ async fn nft(
     if stored_object.is_empty() {
         return Err(ApiError::NotFound);
     }
-    let nft = iota_types::stardust::output::nft::NftOutput::try_from(stored_object[0].clone())
+    let nft = NftOutput::try_from(stored_object[0].clone())
         .map_err(|err| ApiError::ServiceUnavailable(err.to_string()))?;
 
-    Ok(NftResponse { nft })
+    Ok(NftResponse(nft))
 }
 
 #[derive(Clone, Debug, Serialize)]
-struct NftResponse {
-    #[serde(flatten)]
-    nft: iota_types::stardust::output::nft::NftOutput,
-}
+struct NftResponse(NftOutput);
 
 impl_into_response!(NftResponse);
 
 #[cfg(test)]
 mod tests {
+    use bcs::from_bytes;
     use diesel::{RunQueryDsl, insert_into};
-    use serde_json::Value;
+    use iota_types::stardust::output::nft::NftOutput;
     use tokio::sync::oneshot;
     use tracing::Level;
     use tracing_subscriber::FmtSubscriber;
@@ -65,7 +64,6 @@ mod tests {
         rest::{config::RestApiConfig, spawn_rest_server},
         schema::objects::dsl::*,
     };
-
     #[tokio::test]
     async fn get_nft_object() -> Result<(), anyhow::Error> {
         let subscriber = FmtSubscriber::builder()
@@ -81,6 +79,7 @@ mod tests {
 
         // Populate the database with a basic object
         let stored_object = StoredObject::new_nft_for_testing();
+        let nft_output: NftOutput = from_bytes(&stored_object.contents).unwrap();
 
         let rows_inserted = insert_into(objects)
             .values(&vec![stored_object.clone()])
@@ -109,7 +108,7 @@ mod tests {
         ))
         .await?;
 
-        println!("{:?}", resp.json::<Value>().await.unwrap());
+        assert_eq!(resp.json::<NftOutput>().await.unwrap(), nft_output);
 
         shutdown_tx.send(()).unwrap();
 
