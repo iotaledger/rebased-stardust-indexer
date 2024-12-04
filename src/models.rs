@@ -82,7 +82,7 @@ impl StoredObject {
         StoredObject::try_from(object.clone()).unwrap()
     }
 
-    pub(crate) fn random_basic_for_testing() -> Self {
+    pub(crate) fn new_basic_for_testing() -> Self {
         let object = {
             let basic_output = iota_types::stardust::output::basic::BasicOutput {
                 id: UID::new(ObjectID::random()),

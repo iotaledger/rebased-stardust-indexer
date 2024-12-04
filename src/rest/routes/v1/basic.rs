@@ -81,7 +81,7 @@ mod tests {
         let mut connection = pool.get_connection().unwrap();
 
         // Populate the database with a basic object
-        let stored_object = StoredObject::random_basic_for_testing();
+        let stored_object = StoredObject::new_basic_for_testing();
         let basic_output: BasicOutput = from_bytes(&stored_object.contents).unwrap();
 
         let rows_inserted = insert_into(objects)
