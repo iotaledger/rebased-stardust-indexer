@@ -89,7 +89,7 @@ mod tests {
     use crate::{
         db::ConnectionPool,
         models::{ExpirationUnlockCondition, IotaAddress, StoredObject},
-        rest::{config::RestApiConfig, routes::v1::get_free_port, spawn_rest_server},
+        rest::{config::RestApiConfig, routes::v1::get_free_port_for_testing_only, spawn_rest_server},
         schema::{
             expiration_unlock_conditions::dsl::expiration_unlock_conditions, objects::dsl::*,
         },
@@ -152,7 +152,7 @@ mod tests {
 
         // Spawn the REST server
         let (shutdown_tx, shutdown_rx) = oneshot::channel::<()>();
-        let bind_port = get_free_port().unwrap();
+        let bind_port = get_free_port_for_testing_only().unwrap();
         let join_handle = spawn_rest_server(
             RestApiConfig {
                 bind_port,
@@ -248,7 +248,7 @@ mod tests {
 
         // Spawn the REST server
         let (shutdown_tx, shutdown_rx) = oneshot::channel::<()>();
-        let bind_port = get_free_port().unwrap();
+        let bind_port = get_free_port_for_testing_only().unwrap();
         let join_handle = spawn_rest_server(
             RestApiConfig {
                 bind_port,

@@ -20,7 +20,7 @@ struct PaginationParams {
 }
 
 #[cfg(test)]
-fn get_free_port() -> Option<u16> {
+fn get_free_port_for_testing_only() -> Option<u16> {
     match TcpListener::bind("127.0.0.1:0") {
         Ok(listener) => {
             let addr: SocketAddr = listener.local_addr().ok()?;
