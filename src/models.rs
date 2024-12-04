@@ -82,40 +82,30 @@ impl StoredObject {
         StoredObject::try_from(object.clone()).unwrap()
     }
 
-    pub(crate) fn new_basic_for_testing() -> Self {
+    pub(crate) fn new_basic_for_testing(
+        basic_output: iota_types::stardust::output::basic::BasicOutput,
+        version: SequenceNumber,
+    ) -> Result<Self, anyhow::Error> {
         let object = {
-            let basic_output = iota_types::stardust::output::basic::BasicOutput {
-                id: UID::new(ObjectID::random()),
-                balance: Balance::new(0),
-                native_tokens: Bag::default(),
-                storage_deposit_return: None,
-                timelock: None,
-                expiration: None,
-                metadata: None,
-                tag: None,
-                sender: None,
-            };
-
             let move_object = {
                 MoveObject::new_from_execution(
                     BasicOutput::tag(GAS::type_tag()).into(),
-                    SequenceNumber::default(),
-                    bcs::to_bytes(&basic_output).unwrap(),
+                    version,
+                    bcs::to_bytes(&basic_output)?,
                     &ProtocolConfig::get_for_min_version(),
-                )
-                .unwrap()
+                )?
             };
 
             Object::new_from_genesis(
                 Data::Move(move_object),
                 Owner::Shared {
-                    initial_shared_version: SequenceNumber::default(),
+                    initial_shared_version: version,
                 },
                 TransactionDigest::default(),
             )
         };
 
-        StoredObject::try_from(object.clone()).unwrap()
+        StoredObject::try_from(object.clone())
     }
 }
 
