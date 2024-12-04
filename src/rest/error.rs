@@ -42,6 +42,6 @@ impl IntoResponse for ApiError {
 /// Describes the response body of a unsuccessful HTTP request.
 #[derive(Clone, Debug, Serialize)]
 struct ErrorBody {
-    pub error_code: String,
-    pub error_message: String,
+    error_code: String,
+    error_message: String,
 }
