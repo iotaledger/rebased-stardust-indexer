@@ -13,16 +13,6 @@ use diesel::{
     serialize::{IsNull, ToSql},
     sqlite::SqliteValue,
 };
-use iota_types::stardust::output::NftOutput;
-#[cfg(test)]
-use iota_types::{
-    base_types::SequenceNumber,
-    digests::TransactionDigest,
-    gas_coin::GAS,
-    object::{Data, MoveObject, Object, Owner},
-    stardust::output::basic::BasicOutput,
-    supported_protocol_versions::ProtocolConfig,
-};
 use num_enum::TryFromPrimitive;
 
 #[derive(Clone, Debug, PartialEq, Eq, Queryable, Selectable, Insertable)]
@@ -43,6 +33,16 @@ pub struct StoredObject {
     pub object_type: ObjectType,
     pub contents: Vec<u8>,
 }
+
+#[cfg(test)]
+use iota_types::{
+    base_types::SequenceNumber,
+    digests::TransactionDigest,
+    gas_coin::GAS,
+    object::{Data, MoveObject, Object, Owner},
+    stardust::output::{basic::BasicOutput, nft::NftOutput},
+    supported_protocol_versions::ProtocolConfig,
+};
 
 #[cfg(test)]
 impl StoredObject {

@@ -1,8 +1,6 @@
 // Copyright (c) 2024 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-use std::net::{SocketAddr, TcpListener};
-
 use axum::Router;
 use serde::Deserialize;
 
@@ -21,6 +19,7 @@ struct PaginationParams {
 
 #[cfg(test)]
 fn get_free_port_for_testing_only() -> Option<u16> {
+    use std::net::{SocketAddr, TcpListener};
     match TcpListener::bind("127.0.0.1:0") {
         Ok(listener) => {
             let addr: SocketAddr = listener.local_addr().ok()?;

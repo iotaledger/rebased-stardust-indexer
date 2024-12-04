@@ -14,10 +14,7 @@ use crate::{
         error::ApiError, extension::StardustExtension, extractors::custom_path::ExtractPath,
         routes::v1::PaginationParams,
     },
-    schema::{
-        expiration_unlock_conditions::dsl as conditions_dsl,
-        objects::{dsl as objects_dsl, dsl::*},
-    },
+    schema::{expiration_unlock_conditions::dsl as conditions_dsl, objects::dsl as objects_dsl},
 };
 
 pub(crate) fn router() -> Router {
@@ -88,14 +85,15 @@ mod tests {
     use tracing::Level;
     use tracing_subscriber::FmtSubscriber;
 
-    use super::*;
     use crate::{
         db::ConnectionPool,
         models::{ExpirationUnlockCondition, IotaAddress, StoredObject},
         rest::{
             config::RestApiConfig, routes::v1::get_free_port_for_testing_only, spawn_rest_server,
         },
-        schema::expiration_unlock_conditions::dsl::expiration_unlock_conditions,
+        schema::{
+            expiration_unlock_conditions::dsl::expiration_unlock_conditions, objects::dsl::*,
+        },
     };
 
     #[tokio::test]
