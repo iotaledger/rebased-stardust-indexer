@@ -89,7 +89,9 @@ mod tests {
     use crate::{
         db::ConnectionPool,
         models::{ExpirationUnlockCondition, IotaAddress, StoredObject},
-        rest::{config::RestApiConfig, routes::v1::get_free_port_for_testing_only, spawn_rest_server},
+        rest::{
+            config::RestApiConfig, routes::v1::get_free_port_for_testing_only, spawn_rest_server,
+        },
         schema::{
             expiration_unlock_conditions::dsl::expiration_unlock_conditions, objects::dsl::*,
         },
@@ -180,6 +182,157 @@ mod tests {
 
         shutdown_tx.send(()).unwrap();
 
+        join_handle.await.unwrap();
+
+        // Clean up the test database
+        std::fs::remove_file(test_db).unwrap();
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn get_nft_objects_by_address() -> Result<(), anyhow::Error> {
+        let subscriber = FmtSubscriber::builder()
+            .with_max_level(Level::INFO)
+            .finish();
+
+        let _ = tracing::subscriber::set_default(subscriber);
+
+        let test_db = "stored_nft_object_address_filter_test.db";
+        let pool = ConnectionPool::new_with_url(test_db, Default::default()).unwrap();
+        pool.run_migrations().unwrap();
+        let mut connection = pool.get_connection().unwrap();
+
+        let owner_address: iota_types::base_types::IotaAddress = ObjectID::random().into();
+        let other_address: iota_types::base_types::IotaAddress = ObjectID::random().into();
+
+        // Populate the database with NFTs for two different addresses
+        let mut inserted_nfts = vec![];
+
+        for i in 0..2 {
+            let nft_object_id = ObjectID::random();
+            let nft_output = NftOutput {
+                id: UID::new(nft_object_id),
+                balance: Balance::new(100 + i),
+                native_tokens: Bag::default(),
+                expiration: Some(
+                    iota_types::stardust::output::unlock_conditions::ExpirationUnlockCondition {
+                        owner: owner_address.clone(),
+                        return_address: owner_address.clone(),
+                        unix_time: 100 + i as u32,
+                    },
+                ),
+                storage_deposit_return: None,
+                timelock: None,
+            };
+
+            let stored_object = StoredObject::new_nft_for_testing(nft_output.clone())?;
+
+            insert_into(objects)
+                .values(&stored_object)
+                .execute(&mut connection)
+                .unwrap();
+
+            let unlock_condition = ExpirationUnlockCondition {
+                owner: IotaAddress(owner_address.clone()),
+                return_address: IotaAddress(owner_address.clone()),
+                unix_time: 100 + i as i32,
+                object_id: IotaAddress(nft_object_id.into()),
+            };
+
+            insert_into(expiration_unlock_conditions)
+                .values(&unlock_condition)
+                .execute(&mut connection)
+                .unwrap();
+
+            inserted_nfts.push(nft_output);
+        }
+
+        // Insert NFTs for the other address
+        for i in 0..5 {
+            let nft_object_id = ObjectID::random();
+            let nft_output = NftOutput {
+                id: UID::new(nft_object_id),
+                balance: Balance::new(200 + i),
+                native_tokens: Bag::default(),
+                expiration: Some(
+                    iota_types::stardust::output::unlock_conditions::ExpirationUnlockCondition {
+                        owner: other_address.clone(),
+                        return_address: other_address.clone(),
+                        unix_time: 200 + i as u32,
+                    },
+                ),
+                storage_deposit_return: None,
+                timelock: None,
+            };
+
+            let stored_object = StoredObject::new_nft_for_testing(nft_output.clone())?;
+
+            insert_into(objects)
+                .values(&stored_object)
+                .execute(&mut connection)
+                .unwrap();
+
+            let unlock_condition = ExpirationUnlockCondition {
+                owner: IotaAddress(other_address.clone()),
+                return_address: IotaAddress(other_address.clone()),
+                unix_time: 200 + i as i32,
+                object_id: IotaAddress(nft_object_id.into()),
+            };
+
+            insert_into(expiration_unlock_conditions)
+                .values(&unlock_condition)
+                .execute(&mut connection)
+                .unwrap();
+        }
+
+        drop(connection);
+
+        // Spawn the REST server
+        let (shutdown_tx, shutdown_rx) = oneshot::channel::<()>();
+        let bind_port = get_free_port_for_testing_only().unwrap();
+        let join_handle = spawn_rest_server(
+            RestApiConfig {
+                bind_port,
+                ..Default::default()
+            },
+            pool,
+            shutdown_rx,
+        );
+
+        tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+
+        // Fetch NFTs for `owner_address`
+        let resp = reqwest::get(format!(
+            "http://127.0.0.1:{}/v1/nft/{}",
+            bind_port,
+            owner_address.to_string()
+        ))
+        .await?;
+
+        let nft_outputs: Vec<NftOutput> = resp.json().await?;
+        assert_eq!(nft_outputs.len(), 2);
+
+        for (i, output) in nft_outputs.iter().enumerate() {
+            assert_eq!(output, &inserted_nfts[i]);
+        }
+
+        // Fetch NFTs for `other_address`
+        let resp = reqwest::get(format!(
+            "http://127.0.0.1:{}/v1/nft/{}",
+            bind_port,
+            other_address.to_string()
+        ))
+        .await?;
+
+        let other_nft_outputs: Vec<NftOutput> = resp.json().await?;
+        assert_eq!(other_nft_outputs.len(), 5);
+
+        for output in other_nft_outputs {
+            assert!(output.balance.value() >= 200); // Validate range for "other_address" NFTs
+        }
+
+        shutdown_tx.send(()).unwrap();
         join_handle.await.unwrap();
 
         // Clean up the test database
