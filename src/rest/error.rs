@@ -13,27 +13,21 @@ use thiserror::Error;
 pub(crate) enum ApiError {
     #[error("bad request: {0}")]
     BadRequest(String),
-    #[error("not found")]
-    NotFound,
     #[error("service unavailable: {0}")]
     ServiceUnavailable(String),
     #[error("internal server error")]
     InternalServerError,
     #[error("forbidden")]
     Forbidden,
-    #[error("bad request: {0}")]
-    IotaTypes(#[from] iota_types::error::IotaError),
 }
 
 impl IntoResponse for ApiError {
     fn into_response(self) -> Response {
         let status_code = match self {
             ApiError::BadRequest(_) => StatusCode::BAD_REQUEST,
-            ApiError::NotFound => StatusCode::NOT_FOUND,
             ApiError::ServiceUnavailable(_) => StatusCode::SERVICE_UNAVAILABLE,
             ApiError::InternalServerError => StatusCode::INTERNAL_SERVER_ERROR,
             ApiError::Forbidden => StatusCode::FORBIDDEN,
-            ApiError::IotaTypes(_) => StatusCode::BAD_REQUEST,
         };
 
         let body = Json(ErrorBody {

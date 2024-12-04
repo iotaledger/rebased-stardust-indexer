@@ -51,10 +51,6 @@ async fn basic(
             ApiError::InternalServerError
         })?;
 
-    if stored_objects.is_empty() {
-        return Err(ApiError::NotFound);
-    }
-
     let basic_outputs: Vec<BasicOutput> = stored_objects
         .into_iter()
         .filter_map(|stored_object| BasicOutput::try_from(stored_object.clone()).ok())
@@ -121,7 +117,7 @@ mod tests {
             sender: None,
         };
 
-        let stored_object = StoredObject::new_basic_for_testing(basic_output.clone(), 1.into())?;
+        let stored_object = StoredObject::new_basic_for_testing(basic_output.clone())?;
 
         let rows_inserted = insert_into(objects)
             .values(&vec![stored_object.clone()])

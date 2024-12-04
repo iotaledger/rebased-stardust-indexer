@@ -13,6 +13,16 @@ use diesel::{
     serialize::{IsNull, ToSql},
     sqlite::SqliteValue,
 };
+use iota_types::stardust::output::NftOutput;
+#[cfg(test)]
+use iota_types::{
+    base_types::SequenceNumber,
+    digests::TransactionDigest,
+    gas_coin::GAS,
+    object::{Data, MoveObject, Object, Owner},
+    stardust::output::basic::BasicOutput,
+    supported_protocol_versions::ProtocolConfig,
+};
 use num_enum::TryFromPrimitive;
 
 #[derive(Clone, Debug, PartialEq, Eq, Queryable, Selectable, Insertable)]
@@ -35,39 +45,16 @@ pub struct StoredObject {
 }
 
 #[cfg(test)]
-use iota_types::{
-    balance::Balance,
-    base_types::{ObjectID, SequenceNumber},
-    collection_types::Bag,
-    digests::TransactionDigest,
-    gas_coin::GAS,
-    id::UID,
-    object::{Data, MoveObject, Object, Owner},
-    stardust::output::{basic::BasicOutput, nft::NftOutput},
-    supported_protocol_versions::ProtocolConfig,
-};
-
-#[cfg(test)]
 impl StoredObject {
-    pub(crate) fn new_nft_for_testing() -> Self {
+    pub(crate) fn new_nft_for_testing(nft: NftOutput) -> Result<Self, anyhow::Error> {
         let object = {
-            let nft_output = iota_types::stardust::output::nft::NftOutput {
-                id: UID::new(ObjectID::random()),
-                balance: Balance::new(0),
-                native_tokens: Bag::default(),
-                storage_deposit_return: None,
-                timelock: None,
-                expiration: None,
-            };
-
             let move_object = {
                 MoveObject::new_from_execution(
-                    NftOutput::tag(GAS::type_tag()).into(),
+                    iota_types::stardust::output::NftOutput::tag(GAS::type_tag()).into(),
                     SequenceNumber::default(),
-                    bcs::to_bytes(&nft_output).unwrap(),
+                    bcs::to_bytes(&nft)?,
                     &ProtocolConfig::get_for_min_version(),
-                )
-                .unwrap()
+                )?
             };
 
             Object::new_from_genesis(
@@ -79,19 +66,16 @@ impl StoredObject {
             )
         };
 
-        StoredObject::try_from(object.clone()).unwrap()
+        StoredObject::try_from(object.clone())
     }
 
-    pub(crate) fn new_basic_for_testing(
-        basic_output: iota_types::stardust::output::basic::BasicOutput,
-        version: SequenceNumber,
-    ) -> Result<Self, anyhow::Error> {
+    pub(crate) fn new_basic_for_testing(basic: BasicOutput) -> Result<Self, anyhow::Error> {
         let object = {
             let move_object = {
                 MoveObject::new_from_execution(
                     BasicOutput::tag(GAS::type_tag()).into(),
-                    version,
-                    bcs::to_bytes(&basic_output)?,
+                    SequenceNumber::default(),
+                    bcs::to_bytes(&basic)?,
                     &ProtocolConfig::get_for_min_version(),
                 )?
             };
@@ -99,7 +83,7 @@ impl StoredObject {
             Object::new_from_genesis(
                 Data::Move(move_object),
                 Owner::Shared {
-                    initial_shared_version: version,
+                    initial_shared_version: SequenceNumber::default(),
                 },
                 TransactionDigest::default(),
             )
@@ -227,8 +211,16 @@ mod tests {
     #[test]
     fn stored_object_round_trip() {
         let data = vec![
-            StoredObject::new_nft_for_testing(),
-            StoredObject::new_nft_for_testing(),
+            StoredObject {
+                id: iota_types::base_types::IotaAddress::random_for_testing_only().into(),
+                object_type: ObjectType::Nft,
+                contents: Vec::default(),
+            },
+            StoredObject {
+                id: iota_types::base_types::IotaAddress::random_for_testing_only().into(),
+                object_type: ObjectType::Nft,
+                contents: Vec::default(),
+            },
         ];
         let test_db = "stored_object_round_trip.db";
         let mut connection = SqliteConnection::establish(test_db).unwrap();
