@@ -1,7 +1,7 @@
 // Copyright (c) 2024 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-use axum::{Extension, Router, routing::get};
+use axum::{Extension, Router, extract::Query, routing::get};
 use diesel::{JoinOnDsl, prelude::*};
 use iota_types::stardust::output::nft::NftOutput;
 use serde::Serialize;
@@ -10,7 +10,10 @@ use tracing::error;
 use crate::{
     impl_into_response,
     models::StoredObject,
-    rest::{error::ApiError, extension::StardustExtension, extractors::custom_path::ExtractPath},
+    rest::{
+        error::ApiError, extension::StardustExtension, extractors::custom_path::ExtractPath,
+        routes::v1::PaginationParams,
+    },
     schema::{expiration_unlock_conditions::dsl as conditions_dsl, objects::dsl as objects_dsl},
 };
 
@@ -20,12 +23,20 @@ pub(crate) fn router() -> Router {
 
 async fn nft(
     ExtractPath(extracted_address): ExtractPath<iota_types::base_types::IotaAddress>,
+    Query(pagination): Query<PaginationParams>,
     Extension(state): Extension<StardustExtension>,
 ) -> Result<NftResponse, ApiError> {
     let mut conn = state.connection_pool.get_connection().map_err(|e| {
         error!("Failed to get connection: {}", e);
         ApiError::ServiceUnavailable(format!("Failed to get connection: {}", e))
     })?;
+
+    // Set default values for pagination if not provided
+    let page = pagination.page.unwrap_or(1);
+    let page_size = pagination.page_size.unwrap_or(10);
+
+    // Calculate the offset
+    let offset = (page - 1) * page_size;
 
     // Query to find objects with matching expiration_unlock_conditions
     let stored_objects = objects_dsl::objects
@@ -43,6 +54,8 @@ async fn nft(
                 .eq(extracted_address.to_vec())
                 .or(conditions_dsl::return_address.eq(extracted_address.to_vec())),
         )
+        .limit(page_size as i64) // Limit the number of results
+        .offset(offset as i64) // Skip the results for previous pages
         .load::<StoredObject>(&mut conn)
         .map_err(|err| {
             error!("Failed to load stored objects: {}", err);
@@ -76,7 +89,7 @@ mod tests {
     use crate::{
         db::ConnectionPool,
         models::{ExpirationUnlockCondition, IotaAddress, StoredObject},
-        rest::{config::RestApiConfig, spawn_rest_server},
+        rest::{config::RestApiConfig, routes::v1::get_free_port, spawn_rest_server},
         schema::{
             expiration_unlock_conditions::dsl::expiration_unlock_conditions, objects::dsl::*,
         },
@@ -139,9 +152,10 @@ mod tests {
 
         // Spawn the REST server
         let (shutdown_tx, shutdown_rx) = oneshot::channel::<()>();
+        let bind_port = get_free_port().unwrap();
         let join_handle = spawn_rest_server(
             RestApiConfig {
-                bind_port: 3002,
+                bind_port,
                 ..Default::default()
             },
             pool,
@@ -151,7 +165,8 @@ mod tests {
         tokio::time::sleep(std::time::Duration::from_secs(1)).await;
 
         let resp = reqwest::get(format!(
-            "http://127.0.0.1:3002/v1/nft/{}",
+            "http://127.0.0.1:{}/v1/nft/{}",
+            bind_port,
             owner_address.to_string()
         ))
         .await?;
@@ -162,6 +177,134 @@ mod tests {
 
         // Check if the NftOutput object is the same as the one we inserted
         assert_eq!(nft_outputs[0], nft_output);
+
+        shutdown_tx.send(()).unwrap();
+
+        join_handle.await.unwrap();
+
+        // Clean up the test database
+        std::fs::remove_file(test_db).unwrap();
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_pagination() -> Result<(), anyhow::Error> {
+        let subscriber = FmtSubscriber::builder()
+            .with_max_level(Level::INFO)
+            .finish();
+
+        let _ = tracing::subscriber::set_default(subscriber);
+
+        let test_db = "stored_nft_object_pagination_test.db";
+        let pool = ConnectionPool::new_with_url(test_db, Default::default()).unwrap();
+        pool.run_migrations().unwrap();
+        let mut connection = pool.get_connection().unwrap();
+
+        let owner_address: iota_types::base_types::IotaAddress = ObjectID::random().into();
+
+        // Populate the database with multiple NFT objects
+        let mut inserted_objects = vec![];
+        for i in 0..15 {
+            let nft_object_id = ObjectID::random();
+            let nft_output = NftOutput {
+                id: UID::new(nft_object_id),
+                balance: Balance::new(100 + i),
+                native_tokens: Bag::default(),
+                expiration: Some(
+                    iota_types::stardust::output::unlock_conditions::ExpirationUnlockCondition {
+                        owner: owner_address.clone(),
+                        return_address: owner_address.clone(),
+                        unix_time: 100 + i as u32,
+                    },
+                ),
+                storage_deposit_return: None,
+                timelock: None,
+            };
+
+            let stored_object = StoredObject::new_nft_for_testing(nft_output.clone())?;
+
+            insert_into(objects)
+                .values(&stored_object)
+                .execute(&mut connection)
+                .unwrap();
+
+            let unlock_condition = ExpirationUnlockCondition {
+                owner: IotaAddress(owner_address.clone()),
+                return_address: IotaAddress(owner_address.clone()),
+                unix_time: 100 + i as i32,
+                object_id: IotaAddress(nft_object_id.into()),
+            };
+
+            insert_into(expiration_unlock_conditions)
+                .values(&unlock_condition)
+                .execute(&mut connection)
+                .unwrap();
+
+            inserted_objects.push(nft_output);
+        }
+
+        drop(connection);
+
+        // Spawn the REST server
+        let (shutdown_tx, shutdown_rx) = oneshot::channel::<()>();
+        let bind_port = get_free_port().unwrap();
+        let join_handle = spawn_rest_server(
+            RestApiConfig {
+                bind_port,
+                ..Default::default()
+            },
+            pool,
+            shutdown_rx,
+        );
+
+        tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+
+        // Test first page
+        let page = 1;
+        let page_size = 5;
+        let resp = reqwest::get(format!(
+            "http://127.0.0.1:{}/v1/nft/{}?page={}&page_size={}",
+            bind_port,
+            owner_address.to_string(),
+            page,
+            page_size
+        ))
+        .await?;
+
+        let nft_outputs: Vec<NftOutput> = resp.json().await?;
+        assert_eq!(nft_outputs.len(), page_size);
+        assert_eq!(nft_outputs, inserted_objects[..page_size]);
+
+        // Test second page
+        let page = 2;
+        let resp = reqwest::get(format!(
+            "http://127.0.0.1:{}/v1/nft/{}?page={}&page_size={}",
+            bind_port,
+            owner_address.to_string(),
+            page,
+            page_size
+        ))
+        .await?;
+
+        let nft_outputs: Vec<NftOutput> = resp.json().await?;
+        assert_eq!(nft_outputs.len(), page_size);
+        assert_eq!(nft_outputs, inserted_objects[page_size..2 * page_size]);
+
+        // Test third page (remaining items)
+        let page = 3;
+        let resp = reqwest::get(format!(
+            "http://127.0.0.1:{}/v1/nft/{}?page={}&page_size={}",
+            bind_port,
+            owner_address.to_string(),
+            page,
+            page_size
+        ))
+        .await?;
+
+        let nft_outputs: Vec<NftOutput> = resp.json().await?;
+        assert_eq!(nft_outputs.len(), 5); // Remaining items
+        assert_eq!(nft_outputs, inserted_objects[2 * page_size..]);
 
         shutdown_tx.send(()).unwrap();
 
