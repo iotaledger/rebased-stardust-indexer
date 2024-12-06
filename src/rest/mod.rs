@@ -1,40 +1,40 @@
 // Copyright (c) 2024 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
+use std::net::SocketAddr;
+
 use axum::{Extension, Router, response::IntoResponse};
-use tokio::{sync::oneshot, task::JoinHandle};
+use tokio::task::JoinHandle;
+use tokio_util::sync::CancellationToken;
 use tracing::{error, info};
 
 use crate::{
     db::ConnectionPool,
-    rest::{
-        config::RestApiConfig, error::ApiError, extension::StardustExtension, routes::router_all,
-    },
+    rest::{error::ApiError, extension::StardustExtension, routes::router_all},
 };
 
-pub(crate) mod config;
 mod error;
 mod extension;
 mod extractors;
 mod routes;
 
 pub(crate) fn spawn_rest_server(
-    config: RestApiConfig,
+    socket_addr: SocketAddr,
     connection_pool: ConnectionPool,
-    shutdown: oneshot::Receiver<()>,
+    cancel_token: CancellationToken,
 ) -> JoinHandle<()> {
     tokio::spawn(async move {
         let app = build_app(connection_pool);
 
-        let listener = tokio::net::TcpListener::bind(config.socket_addr())
+        let listener = tokio::net::TcpListener::bind(socket_addr)
             .await
             .expect("Failed to bind to socket");
 
-        info!("Listening on: {}", config.socket_addr());
+        info!("Listening on: {}", socket_addr);
 
         axum::serve(listener, app)
-            .with_graceful_shutdown(async {
-                shutdown.await.ok();
+            .with_graceful_shutdown(async move {
+                cancel_token.cancelled().await;
                 info!("Shutdown signal received.");
             })
             .await

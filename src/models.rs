@@ -46,6 +46,14 @@ use iota_types::{
 
 #[cfg(test)]
 impl StoredObject {
+    fn new_dummy_for_testing() -> Self {
+        Self {
+            id: iota_types::base_types::IotaAddress::random_for_testing_only().into(),
+            object_type: ObjectType::Nft,
+            contents: Default::default(),
+        }
+    }
+
     pub(crate) fn new_nft_for_testing(nft: NftOutput) -> Result<Self, anyhow::Error> {
         let object = {
             let move_object = {
@@ -211,16 +219,8 @@ mod tests {
     #[test]
     fn stored_object_round_trip() {
         let data = vec![
-            StoredObject {
-                id: iota_types::base_types::IotaAddress::random_for_testing_only().into(),
-                object_type: ObjectType::Nft,
-                contents: Vec::default(),
-            },
-            StoredObject {
-                id: iota_types::base_types::IotaAddress::random_for_testing_only().into(),
-                object_type: ObjectType::Nft,
-                contents: Vec::default(),
-            },
+            StoredObject::new_dummy_for_testing(),
+            StoredObject::new_dummy_for_testing(),
         ];
         let test_db = "stored_object_round_trip.db";
         let mut connection = SqliteConnection::establish(test_db).unwrap();

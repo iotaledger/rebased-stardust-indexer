@@ -22,6 +22,7 @@ thiserror = "2.0.3"
 tracing = "0.1.41"
 tracing-subscriber = "0.3.19"
 tokio = { version = "1.39.2", features = ["rt-multi-thread", "signal"] }
+tokio-util = "0.7.13"
 
 [dev-dependencies]
 iota-types = { git = "https://github.com/iotaledger/iota.git", tag = "v0.7.2-rc", version = "0.7.2-rc", features = ["test-utils"]}

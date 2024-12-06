@@ -13,8 +13,7 @@ mod models;
 mod rest;
 mod schema;
 
-use rest::config::RestApiConfig;
-use tokio::sync::oneshot;
+use tokio_util::sync::CancellationToken;
 
 #[derive(Parser, Clone, Debug)]
 #[clap(
@@ -27,8 +26,9 @@ pub struct Config {
     pub log_level: Level,
     #[clap(flatten)]
     pub connection_pool_config: ConnectionPoolConfig,
-    #[clap(flatten)]
-    pub rest_api_config: RestApiConfig,
+    #[arg(long, default_value = "0.0.0.0::3000")]
+    #[arg(env = "REST_API_SOCKET_ADDRESS")]
+    pub rest_api_socket_address: std::net::SocketAddr,
 }
 
 #[tokio::main]
@@ -41,16 +41,15 @@ async fn main() -> anyhow::Result<()> {
 
     tracing::subscriber::set_global_default(subscriber).expect("setting default subscriber failed");
 
-    // Create a oneshot channel for shutdown signaling
-    let (shutdown_tx, shutdown_rx) = oneshot::channel::<()>();
-
     // Spawn a task to listen for CTRL+C and send a shutdown signal
+    let token = CancellationToken::new();
+    let cloned_token = token.clone();
     tokio::spawn(async move {
         tokio::signal::ctrl_c()
             .await
             .expect("Failed to listen for CTRL+C");
         info!("CTRL+C received, shutting down.");
-        let _ = shutdown_tx.send(());
+        cloned_token.cancel();
     });
 
     let connection_pool = ConnectionPool::new(opts.connection_pool_config)?;
@@ -59,7 +58,7 @@ async fn main() -> anyhow::Result<()> {
     // TODO: Spawn synchronization logic
 
     // Spawn the REST server
-    _ = spawn_rest_server(opts.rest_api_config, connection_pool, shutdown_rx)
+    _ = spawn_rest_server(opts.rest_api_socket_address, connection_pool, token)
         .await
         .inspect_err(|e| error!("REST server terminated with error: {e}"));
 
