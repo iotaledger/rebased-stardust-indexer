@@ -10,6 +10,10 @@ use diesel::{
     serialize::{IsNull, ToSql},
     sqlite::SqliteValue,
 };
+use iota_types::stardust::output::{
+    BASIC_OUTPUT_MODULE_NAME, BASIC_OUTPUT_STRUCT_NAME, NFT_OUTPUT_MODULE_NAME,
+    NFT_OUTPUT_STRUCT_NAME,
+};
 use num_enum::TryFromPrimitive;
 
 #[derive(Clone, Debug, PartialEq, Eq, Queryable, Selectable, Insertable)]
@@ -18,8 +22,49 @@ use num_enum::TryFromPrimitive;
 pub struct ExpirationUnlockCondition {
     pub owner: IotaAddress,
     pub return_address: IotaAddress,
-    pub unix_time: i32,
+    #[diesel(sql_type = diesel::sql_types::BigInt)]
+    pub unix_time: i64,
     pub object_id: IotaAddress,
+}
+
+impl TryFrom<iota_types::stardust::output::basic::BasicOutput> for ExpirationUnlockCondition {
+    type Error = anyhow::Error;
+
+    fn try_from(
+        basic: iota_types::stardust::output::basic::BasicOutput,
+    ) -> Result<Self, Self::Error> {
+        let Some(expiration) = basic.expiration else {
+            anyhow::bail!("expiration unlock condition does not exists");
+        };
+
+        Ok(Self {
+            owner: IotaAddress(expiration.owner),
+            return_address: IotaAddress(expiration.return_address),
+            unix_time: expiration.unix_time as i64,
+            object_id: IotaAddress(iota_types::base_types::IotaAddress::from(
+                *basic.id.object_id(),
+            )),
+        })
+    }
+}
+
+impl TryFrom<iota_types::stardust::output::nft::NftOutput> for ExpirationUnlockCondition {
+    type Error = anyhow::Error;
+
+    fn try_from(nft: iota_types::stardust::output::nft::NftOutput) -> Result<Self, Self::Error> {
+        let Some(expiration) = nft.expiration else {
+            anyhow::bail!("expiration unlock condition does not exists");
+        };
+
+        Ok(Self {
+            owner: IotaAddress(expiration.owner),
+            return_address: IotaAddress(expiration.return_address),
+            unix_time: expiration.unix_time as i64,
+            object_id: IotaAddress(iota_types::base_types::IotaAddress::from(
+                *nft.id.object_id(),
+            )),
+        })
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Queryable, Selectable, Insertable)]
@@ -33,7 +78,7 @@ pub struct StoredObject {
 
 #[cfg(test)]
 impl StoredObject {
-    fn random_for_testing() -> Self {
+    pub fn random_for_testing() -> Self {
         Self {
             id: iota_types::base_types::IotaAddress::random_for_testing_only().into(),
             object_type: ObjectType::Nft,
@@ -125,9 +170,22 @@ impl TryFrom<&iota_types::object::ObjectInner> for ObjectType {
         let Some(struct_tag) = object.struct_tag() else {
             anyhow::bail!("source object is not a Move object");
         };
-        match (struct_tag.module.as_str(), struct_tag.name.as_str()) {
-            ("nft", "NftOutput") => Ok(Self::Nft),
-            ("basic", "BasicOutput") => Ok(Self::Basic),
+
+        match (
+            struct_tag.module.as_ident_str(),
+            struct_tag.name.as_ident_str(),
+        ) {
+            (nft_module, nft_struct)
+                if nft_module == NFT_OUTPUT_MODULE_NAME && nft_struct == NFT_OUTPUT_STRUCT_NAME =>
+            {
+                Ok(Self::Nft)
+            }
+            (basic_module, basic_struct)
+                if basic_module == BASIC_OUTPUT_MODULE_NAME
+                    && basic_struct == BASIC_OUTPUT_STRUCT_NAME =>
+            {
+                Ok(Self::Basic)
+            }
             _ => anyhow::bail!("not eligible type for indexing"),
         }
     }
@@ -148,6 +206,15 @@ impl FromSql<diesel::sql_types::Integer, diesel::sqlite::Sqlite> for ObjectType 
         let stored = u8::try_from(i32::from_sql(bytes)?)?;
         Ok(Self::try_from(stored)?)
     }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Queryable, Selectable, Insertable, AsChangeset)]
+#[diesel(table_name = crate::schema::last_checkpoint_sync)]
+#[diesel(check_for_backend(diesel::sqlite::Sqlite))]
+pub struct LastCheckpointSync {
+    #[diesel(sql_type = diesel::sql_types::BigInt)]
+    pub sequence_number: i64,
+    pub task_id: String,
 }
 
 #[cfg(test)]

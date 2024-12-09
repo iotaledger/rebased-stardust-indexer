@@ -94,6 +94,11 @@ impl ConnectionPool {
     pub fn run_migrations(&self) -> Result<()> {
         run_migrations(&mut self.get_connection()?)
     }
+
+    /// Revert all applied migrations
+    pub fn revert_all_migrations(&self) -> Result<()> {
+        revert_all_migrations(&mut self.get_connection()?)
+    }
 }
 
 /// Run any pending migrations to the connected database.
@@ -101,6 +106,15 @@ pub fn run_migrations(connection: &mut impl MigrationHarness<Sqlite>) -> Result<
     connection
         .run_pending_migrations(MIGRATIONS)
         .map_err(|e| anyhow!("failed to run migrations {e}"))?;
+
+    Ok(())
+}
+
+/// Revert all applied migrations to the connected database
+pub fn revert_all_migrations(connection: &mut impl MigrationHarness<Sqlite>) -> Result<()> {
+    connection
+        .revert_all_migrations(MIGRATIONS)
+        .map_err(|e| anyhow!("failed to revert all migrations {e}"))?;
 
     Ok(())
 }

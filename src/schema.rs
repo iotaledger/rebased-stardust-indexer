@@ -4,8 +4,15 @@ diesel::table! {
     expiration_unlock_conditions (object_id) {
         owner -> Binary,
         return_address -> Binary,
-        unix_time -> Integer,
+        unix_time -> BigInt,
         object_id -> Binary,
+    }
+}
+
+diesel::table! {
+    last_checkpoint_sync (task_id) {
+        task_id -> Text,
+        sequence_number -> BigInt,
     }
 }
 
@@ -21,5 +28,6 @@ diesel::joinable!(expiration_unlock_conditions -> objects (object_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
     expiration_unlock_conditions,
+    last_checkpoint_sync,
     objects,
 );
