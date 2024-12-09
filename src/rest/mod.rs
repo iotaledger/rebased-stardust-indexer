@@ -10,13 +10,17 @@ use tracing::{error, info};
 
 use crate::{
     db::ConnectionPool,
-    rest::{error::ApiError, extension::StardustExtension, routes::router_all},
+    rest::{error::ApiError, routes::router_all},
 };
 
 mod error;
-mod extension;
 mod extractors;
 mod routes;
+
+#[derive(Clone)]
+pub(crate) struct State {
+    pub(crate) connection_pool: ConnectionPool,
+}
 
 pub(crate) fn spawn_rest_server(
     socket_addr: SocketAddr,
@@ -46,7 +50,7 @@ pub(crate) fn spawn_rest_server(
 fn build_app(connection_pool: ConnectionPool) -> Router {
     Router::new()
         .merge(router_all())
-        .layer(Extension(StardustExtension { connection_pool }))
+        .layer(Extension(State { connection_pool }))
         .fallback(fallback)
 }
 

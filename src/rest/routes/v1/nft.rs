@@ -10,8 +10,8 @@ use crate::{
     impl_into_response,
     models::ObjectType,
     rest::{
+        State,
         error::ApiError,
-        extension::StardustExtension,
         extractors::Path,
         routes::v1::{PaginationParams, fetch_stored_objects},
     },
@@ -24,7 +24,7 @@ pub(crate) fn router() -> Router {
 async fn nft(
     Path(extracted_address): Path<iota_types::base_types::IotaAddress>,
     Query(pagination): Query<PaginationParams>,
-    Extension(state): Extension<StardustExtension>,
+    Extension(state): Extension<State>,
 ) -> Result<NftResponse, ApiError> {
     let mut conn = state.connection_pool.get_connection().map_err(|e| {
         error!("failed to get connection: {e}");
