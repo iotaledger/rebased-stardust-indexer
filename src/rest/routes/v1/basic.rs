@@ -22,30 +22,11 @@ pub(crate) fn router() -> Router {
 }
 
 async fn basic(
-    Path(extracted_address): Path<iota_types::base_types::IotaAddress>,
+    Path(address): Path<iota_types::base_types::IotaAddress>,
     Query(pagination): Query<PaginationParams>,
     Extension(state): Extension<State>,
 ) -> Result<BasicResponse, ApiError> {
-    let mut conn = state.connection_pool.get_connection().map_err(|e| {
-        error!("failed to get connection: {e}");
-        ApiError::ServiceUnavailable(format!("failed to get connection: {}", e))
-    })?;
-
-    // Set default values for pagination if not provided
-    let page = pagination.page.unwrap_or(1);
-    let page_size = pagination.page_size.unwrap_or(10);
-
-    // Calculate the offset
-    let offset = (page - 1) * page_size;
-
-    // Query to find objects with matching expiration_unlock_conditions
-    let stored_objects = fetch_stored_objects(
-        &mut conn,
-        &extracted_address.as_ref(),
-        ObjectType::Basic,
-        page_size as usize,
-        offset as usize,
-    )?;
+    let stored_objects = fetch_stored_objects(address, pagination, state, ObjectType::Basic)?;
 
     let basic_outputs: Vec<BasicOutput> = stored_objects
         .into_iter()
