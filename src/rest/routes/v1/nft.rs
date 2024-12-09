@@ -52,7 +52,7 @@ async fn nft(
         .map(NftOutput::try_from)
         .collect::<Result<Vec<_>, _>>()
         .map_err(|e| {
-            error!("Failed to convert stored object to NFT output: {}", e);
+            error!("failed to convert stored object to NFT output: {}", e);
             ApiError::InternalServerError
         })?;
 

@@ -40,7 +40,7 @@ fn fetch_stored_objects(
         .offset(offset as i64) // Skip the results for previous pages
         .load::<StoredObject>(conn)
         .map_err(|err| {
-            error!("Failed to load stored objects: {}", err);
+            error!("failed to load stored objects: {}", err);
             ApiError::InternalServerError
         })?;
 
