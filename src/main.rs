@@ -47,7 +47,7 @@ async fn main() -> anyhow::Result<()> {
     tokio::spawn(async move {
         tokio::signal::ctrl_c()
             .await
-            .expect("Failed to listen for CTRL+C");
+            .expect("failed to listen for CTRL+C");
         info!("CTRL+C received, shutting down.");
         cloned_token.cancel();
     });

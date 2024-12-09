@@ -28,7 +28,7 @@ async fn nft(
 ) -> Result<NftResponse, ApiError> {
     let mut conn = state.connection_pool.get_connection().map_err(|e| {
         error!("failed to get connection: {e}");
-        ApiError::ServiceUnavailable(format!("Failed to get connection: {}", e))
+        ApiError::ServiceUnavailable(format!("failed to get connection: {}", e))
     })?;
 
     // Set default values for pagination if not provided

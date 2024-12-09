@@ -28,7 +28,7 @@ pub(crate) fn spawn_rest_server(
 
         let listener = tokio::net::TcpListener::bind(socket_addr)
             .await
-            .expect("Failed to bind to socket");
+            .expect("failed to bind to socket");
 
         info!("Listening on: {}", socket_addr);
 
