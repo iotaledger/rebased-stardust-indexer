@@ -56,7 +56,7 @@ mod tests {
     use tracing_subscriber::FmtSubscriber;
 
     use crate::{
-        db::ConnectionPool,
+        db::{ConnectionPool, PoolConnection},
         models::{ExpirationUnlockCondition, IotaAddress, StoredObject},
         rest::{routes::v1::get_free_port_for_testing_only, spawn_rest_server},
         schema::{
@@ -84,80 +84,23 @@ mod tests {
         let mut inserted_nfts = vec![];
 
         for i in 0..2 {
-            let nft_object_id = ObjectID::random();
-            let nft_output = NftOutput {
-                id: UID::new(nft_object_id),
-                balance: Balance::new(100 + i),
-                native_tokens: Bag::default(),
-                expiration: Some(
-                    iota_types::stardust::output::unlock_conditions::ExpirationUnlockCondition {
-                        owner: owner_address.clone(),
-                        return_address: owner_address.clone(),
-                        unix_time: 100 + i as u32,
-                    },
-                ),
-                storage_deposit_return: None,
-                timelock: None,
-            };
-
-            let stored_object = StoredObject::new_nft_for_testing(nft_output.clone())?;
-
-            insert_into(objects)
-                .values(&stored_object)
-                .execute(&mut connection)
-                .unwrap();
-
-            let unlock_condition = ExpirationUnlockCondition {
-                owner: IotaAddress(owner_address.clone()),
-                return_address: IotaAddress(owner_address.clone()),
-                unix_time: 100 + i as i32,
-                object_id: IotaAddress(nft_object_id.into()),
-            };
-
-            insert_into(expiration_unlock_conditions)
-                .values(&unlock_condition)
-                .execute(&mut connection)
-                .unwrap();
-
+            let nft_output = create_and_insert_nft_output(
+                &mut connection,
+                owner_address.clone(),
+                100 + i,
+                100 + i as u32,
+            )?;
             inserted_nfts.push(nft_output);
         }
 
         // Insert NFTs for the other address
         for i in 0..5 {
-            let nft_object_id = ObjectID::random();
-            let nft_output = NftOutput {
-                id: UID::new(nft_object_id),
-                balance: Balance::new(200 + i),
-                native_tokens: Bag::default(),
-                expiration: Some(
-                    iota_types::stardust::output::unlock_conditions::ExpirationUnlockCondition {
-                        owner: other_address.clone(),
-                        return_address: other_address.clone(),
-                        unix_time: 200 + i as u32,
-                    },
-                ),
-                storage_deposit_return: None,
-                timelock: None,
-            };
-
-            let stored_object = StoredObject::new_nft_for_testing(nft_output.clone())?;
-
-            insert_into(objects)
-                .values(&stored_object)
-                .execute(&mut connection)
-                .unwrap();
-
-            let unlock_condition = ExpirationUnlockCondition {
-                owner: IotaAddress(other_address.clone()),
-                return_address: IotaAddress(other_address.clone()),
-                unix_time: 200 + i as i32,
-                object_id: IotaAddress(nft_object_id.into()),
-            };
-
-            insert_into(expiration_unlock_conditions)
-                .values(&unlock_condition)
-                .execute(&mut connection)
-                .unwrap();
+            let _ = create_and_insert_nft_output(
+                &mut connection,
+                other_address.clone(),
+                200 + i,
+                200 + i as u32,
+            )?;
         }
 
         drop(connection);
@@ -230,41 +173,12 @@ mod tests {
         // Populate the database with multiple NFT objects
         let mut inserted_objects = vec![];
         for i in 0..15 {
-            let nft_object_id = ObjectID::random();
-            let nft_output = NftOutput {
-                id: UID::new(nft_object_id),
-                balance: Balance::new(100 + i),
-                native_tokens: Bag::default(),
-                expiration: Some(
-                    iota_types::stardust::output::unlock_conditions::ExpirationUnlockCondition {
-                        owner: owner_address.clone(),
-                        return_address: owner_address.clone(),
-                        unix_time: 100 + i as u32,
-                    },
-                ),
-                storage_deposit_return: None,
-                timelock: None,
-            };
-
-            let stored_object = StoredObject::new_nft_for_testing(nft_output.clone())?;
-
-            insert_into(objects)
-                .values(&stored_object)
-                .execute(&mut connection)
-                .unwrap();
-
-            let unlock_condition = ExpirationUnlockCondition {
-                owner: IotaAddress(owner_address.clone()),
-                return_address: IotaAddress(owner_address.clone()),
-                unix_time: 100 + i as i32,
-                object_id: IotaAddress(nft_object_id.into()),
-            };
-
-            insert_into(expiration_unlock_conditions)
-                .values(&unlock_condition)
-                .execute(&mut connection)
-                .unwrap();
-
+            let nft_output = create_and_insert_nft_output(
+                &mut connection,
+                owner_address.clone(),
+                100 + i,
+                100 + i as u32,
+            )?;
             inserted_objects.push(nft_output);
         }
 
@@ -335,5 +249,48 @@ mod tests {
         std::fs::remove_file(test_db).unwrap();
 
         Ok(())
+    }
+    fn create_and_insert_nft_output(
+        connection: &mut PoolConnection,
+        owner_address: iota_types::base_types::IotaAddress,
+        balance: u64,
+        unix_time: u32,
+    ) -> Result<NftOutput, anyhow::Error> {
+        let nft_object_id = ObjectID::random();
+        let nft_output = NftOutput {
+            id: UID::new(nft_object_id),
+            balance: Balance::new(balance),
+            native_tokens: Bag::default(),
+            expiration: Some(
+                iota_types::stardust::output::unlock_conditions::ExpirationUnlockCondition {
+                    owner: owner_address.clone(),
+                    return_address: owner_address.clone(),
+                    unix_time,
+                },
+            ),
+            storage_deposit_return: None,
+            timelock: None,
+        };
+
+        let stored_object = StoredObject::new_nft_for_testing(nft_output.clone())?;
+
+        insert_into(objects)
+            .values(&stored_object)
+            .execute(connection)
+            .unwrap();
+
+        let unlock_condition = ExpirationUnlockCondition {
+            owner: IotaAddress(owner_address.clone()),
+            return_address: IotaAddress(owner_address.clone()),
+            unix_time: unix_time as i32,
+            object_id: IotaAddress(nft_object_id.into()),
+        };
+
+        insert_into(expiration_unlock_conditions)
+            .values(&unlock_condition)
+            .execute(connection)
+            .unwrap();
+
+        Ok(nft_output)
     }
 }
