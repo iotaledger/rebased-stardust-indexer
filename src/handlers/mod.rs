@@ -1,6 +1,6 @@
 //! Checkpoint syncing Handlers for the Indexer to use
 
-use async_trait::async_trait;
+use axum::async_trait;
 pub use config::IndexerConfig;
 use iota_data_ingestion_core::{DataIngestionMetrics, IndexerExecutor, ReaderOptions, WorkerPool};
 use progress_store::SqliteProgressStore;
@@ -93,10 +93,15 @@ impl IndexerHandler {
 
     /// Sends a Shutdown Signal to the `IndexerExecutor` and wait for the task
     /// to finish, this will block the execution
-    #[tracing::instrument(skip(self), err)]
+    #[tracing::instrument(name = "IndexerHandle", skip(self), err)]
     pub async fn graceful_shutdown(self) -> anyhow::Result<()> {
+        tracing::info!("Received shutdown Signal");
         _ = self.shutdown_tx.send(());
-        self.handle.await.map_err(Into::into)
+        tracing::info!("Wait for task to shutdown");
+        self.handle
+            .await
+            .map_err(Into::into)
+            .inspect(|_| tracing::info!("Task shutdown successfully"))
     }
 }
 

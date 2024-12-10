@@ -4,7 +4,7 @@
 
 use std::ops::Deref;
 
-use async_trait::async_trait;
+use axum::async_trait;
 use diesel::{Connection, RunQueryDsl, insert_into};
 use iota_data_ingestion_core::Worker;
 use iota_types::{

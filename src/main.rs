@@ -1,3 +1,6 @@
+// Copyright (c) 2024 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 use std::time::Duration;
 
 use clap::Parser;
@@ -10,12 +13,15 @@ use tokio_graceful_shutdown::{
 use tracing::Level;
 use tracing_subscriber::FmtSubscriber;
 
-use crate::handlers::IndexerConfig;
+use crate::{handlers::IndexerConfig, rest::spawn_rest_server};
 
 mod db;
 mod handlers;
 mod models;
+mod rest;
 mod schema;
+
+use tokio_util::sync::CancellationToken;
 
 #[derive(Parser, Clone, Debug)]
 #[clap(
@@ -28,6 +34,9 @@ pub struct Config {
     pub log_level: Level,
     #[clap(flatten)]
     pub connection_pool_config: ConnectionPoolConfig,
+    #[arg(long, default_value = "0.0.0.0:3000")]
+    #[arg(env = "REST_API_SOCKET_ADDRESS")]
+    pub rest_api_socket_address: std::net::SocketAddr,
     #[clap(flatten)]
     pub indexer_config: IndexerConfig,
 }
@@ -44,13 +53,22 @@ async fn main() -> anyhow::Result<()> {
     // Spawn synchronization logic from a Fullnode
     let indexer_hanle = IndexerHandler::init(connection_pool.clone(), opts.indexer_config).await?;
 
-    // TODO: Spawn the REST API
+    // Spawn the REST server
+    let rest_api_handle = spawn_rest_server(
+        opts.rest_api_socket_address,
+        connection_pool,
+        CancellationToken::new(),
+    );
 
     // Register the subsystems we want to notify for a graceful shutdown
     Toplevel::new(|s| async move {
         s.start(SubsystemBuilder::new(
             "IndexerHandle",
             indexer_hanle.into_subsystem(),
+        ));
+        s.start(SubsystemBuilder::new(
+            "RestApi",
+            rest_api_handle.into_subsystem(),
         ));
     })
     .catch_signals()

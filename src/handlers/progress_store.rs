@@ -1,7 +1,7 @@
 //! The progress store is responsible for indicating the last synced checkpoint
 //! when teh Indexer restarts or crashes
 
-use async_trait::async_trait;
+use axum::async_trait;
 use diesel::prelude::*;
 use iota_data_ingestion_core::ProgressStore;
 use iota_types::messages_checkpoint::CheckpointSequenceNumber;
