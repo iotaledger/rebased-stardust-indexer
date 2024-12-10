@@ -2,16 +2,14 @@
 //! can apply filtering logic to sotre only the desired data if necessary into a
 //! local or remote storage
 
-use std::ops::Deref;
-
 use axum::async_trait;
-use diesel::{Connection, RunQueryDsl, insert_into};
+use diesel::{RunQueryDsl, insert_into};
 use iota_data_ingestion_core::Worker;
 use iota_types::{
     base_types::ObjectID,
-    full_checkpoint_content::{CheckpointData, CheckpointTransaction},
-    object::Object,
+    full_checkpoint_content::CheckpointData,
     stardust::output::{BasicOutput, NftOutput},
+    transaction::TransactionDataAPI,
 };
 
 use crate::{
@@ -35,93 +33,80 @@ impl CheckpointWorker {
         Self { pool, package_ids }
     }
 
-    /// Check if the provided object suffice the following requirements in order
-    /// to be stored
-    /// - Is a shared object
-    /// - Its struct tag does match the targeted package id
-    pub fn object_belongs_to_package(&self, obj: &Object) -> bool {
-        self.package_ids.iter().any(|package_id| {
-            obj.is_shared()
-                && (obj
-                    .struct_tag()
-                    .map(|struct_tag| package_id.deref() == &struct_tag.address)
-                    .unwrap_or_default())
-        })
-    }
-
-    /// Insert multiple `ExpirationUnlockCondition` and `StoredObject` objects
-    /// from a `CheckpointData` and wrap the queries into a database transaction
-    fn multi_insert_transaction(
+    /// Insert multiple `StoredObject` into database
+    fn insert_stored_objects(
         &self,
-        expiration: impl AsRef<[ExpirationUnlockCondition]>,
         stored_objects: impl AsRef<[StoredObject]>,
     ) -> anyhow::Result<()> {
         let mut pool = self.pool.get_connection()?;
 
-        pool.transaction::<_, anyhow::Error, _>(|conn| {
-            insert_into(expiration_unlock_conditions)
-                .values(expiration.as_ref())
-                .execute(conn)?;
+        insert_into(objects)
+            .values(stored_objects.as_ref())
+            .execute(&mut pool)?;
 
-            insert_into(objects)
-                .values(stored_objects.as_ref())
-                .execute(conn)?;
+        Ok(())
+    }
 
-            Ok(())
-        })
+    /// Insert multiple `ExpirationUnlockCondition` into database
+    fn insert_expiration_unlock_conditions(
+        &self,
+        expiration: impl AsRef<[ExpirationUnlockCondition]>,
+    ) -> anyhow::Result<()> {
+        let mut pool = self.pool.get_connection()?;
+
+        insert_into(expiration_unlock_conditions)
+            .values(expiration.as_ref())
+            .execute(&mut pool)?;
+
+        Ok(())
     }
 }
 
 #[async_trait]
 impl Worker for CheckpointWorker {
     async fn process_checkpoint(&self, checkpoint: CheckpointData) -> anyhow::Result<()> {
-        // Genesis transaction have 0 input objects and N objects as output ones,
-        // for implementation simplicity we verify in transactions's output objects
-        // vector if there are any objects related to interested package
+        let stored_objects =
+            checkpoint
+                .transactions
+                .into_iter()
+                .fold(Vec::new(), |mut stored_objects, tx| {
+                    let object_belongs_to_package =
+                        tx.transaction.intent_message().value.is_genesis_tx()
+                            || tx.input_objects.iter().any(|obj| {
+                                obj.is_package()
+                                    && self
+                                        .package_ids
+                                        .iter()
+                                        .any(|package_id| &obj.id() == package_id)
+                            });
 
-        let (expiration, stored_objects) = checkpoint
-            .transactions
-            .into_iter()
-            .flat_map(|tx: CheckpointTransaction| {
-                tx.output_objects
-                    .into_iter()
-                    .filter_map(|obj: Object| {
-                        self.object_belongs_to_package(&obj)
-                            .then(|| StoredObject::try_from(obj))
-                    })
-                    .collect::<anyhow::Result<Vec<StoredObject>>>()
-            })
-            .try_fold(
-                (Vec::new(), Vec::new()),
-                |(mut expiration_acc, mut stored_obj_acc), stored_objects| {
+                    if object_belongs_to_package {
+                        stored_objects.extend(
+                            tx.output_objects
+                                .into_iter()
+                                .filter(|obj| obj.is_shared())
+                                .filter_map(|obj| StoredObject::try_from(obj).ok()),
+                        );
+                    }
+
                     stored_objects
-                        .into_iter()
-                        .try_for_each(|stored_obj: StoredObject| {
-                            match stored_obj.object_type {
-                                ObjectType::Basic => {
-                                    let basic = BasicOutput::try_from(stored_obj.clone())?;
-                                    if basic.expiration.is_some() {
-                                        stored_obj_acc.push(stored_obj);
-                                        expiration_acc
-                                            .push(ExpirationUnlockCondition::try_from(basic)?);
-                                    }
-                                }
-                                ObjectType::Nft => {
-                                    let nft = NftOutput::try_from(stored_obj.clone())?;
-                                    if nft.expiration.is_some() {
-                                        stored_obj_acc.push(stored_obj);
-                                        expiration_acc
-                                            .push(ExpirationUnlockCondition::try_from(nft)?);
-                                    }
-                                }
-                            };
-                            Ok::<_, anyhow::Error>(())
-                        })
-                        .map(|_| (expiration_acc, stored_obj_acc))
-                },
-            )?;
+                });
 
-        self.multi_insert_transaction(expiration, stored_objects)?;
+        self.insert_stored_objects(&stored_objects)?;
+
+        let expiration_uc = stored_objects
+            .into_iter()
+            .filter_map(|stored_object| match stored_object.object_type {
+                ObjectType::Basic => BasicOutput::try_from(stored_object)
+                    .ok()
+                    .and_then(|basic| ExpirationUnlockCondition::try_from(basic).ok()),
+                ObjectType::Nft => NftOutput::try_from(stored_object)
+                    .ok()
+                    .and_then(|nft| ExpirationUnlockCondition::try_from(nft).ok()),
+            })
+            .collect::<Vec<ExpirationUnlockCondition>>();
+
+        self.insert_expiration_unlock_conditions(expiration_uc)?;
 
         Ok(())
     }

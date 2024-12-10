@@ -8,7 +8,7 @@ use iota_types::messages_checkpoint::CheckpointSequenceNumber;
 
 use crate::{db::ConnectionPool, models::LastCheckpointSync, schema::last_checkpoint_sync::dsl::*};
 
-/// Record in `SQLite` the latest synced checkpoint, this wil allow the Indexer
+/// Record in `SQLite` the latest synced checkpoint, this will allow the Indexer
 /// to resume syncing checkpoints from last registered one instead of starting
 /// from the checkpoint with sequence number `0`
 pub struct SqliteProgressStore {

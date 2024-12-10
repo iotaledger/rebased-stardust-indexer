@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS objects (
 CREATE TABLE IF NOT EXISTS expiration_unlock_conditions (
     owner BLOB NOT NULL,
     return_address BLOB NOT NULL,
-    unix_time BIGINT NOT NULL,
+    unix_time INTEGER NOT NULL,
     object_id BLOB NOT NULL PRIMARY KEY,
     FOREIGN KEY (object_id) REFERENCES objects (id) ON DELETE CASCADE
 );

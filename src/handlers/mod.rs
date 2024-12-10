@@ -1,4 +1,4 @@
-//! Checkpoint syncing Handlers for the Indexer to use
+//! Checkpoint syncing Handlers for the Indexer
 
 use axum::async_trait;
 pub use config::IndexerConfig;
@@ -24,7 +24,7 @@ pub struct IndexerHandler {
     // TODO: This should be replaced with a CancellationToken
     // https://github.com/iotaledger/iota/issues/4383
     shutdown_tx: oneshot::Sender<()>,
-    handle: JoinHandle<()>,
+    handle: JoinHandle<anyhow::Result<()>>,
 }
 
 impl IndexerHandler {
@@ -82,7 +82,7 @@ impl IndexerHandler {
                     rx,
                 )
                 .await
-                .unwrap();
+                .map(|_| ())
         });
 
         Ok(Self {
@@ -99,8 +99,7 @@ impl IndexerHandler {
         _ = self.shutdown_tx.send(());
         tracing::info!("Wait for task to shutdown");
         self.handle
-            .await
-            .map_err(Into::into)
+            .await?
             .inspect(|_| tracing::info!("Task shutdown successfully"))
     }
 }
