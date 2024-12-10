@@ -20,14 +20,14 @@ mod worker;
 /// of the `IndexerExecutor` in background in as task and provide an interface
 /// to gracefully shutdown it
 #[derive(Debug)]
-pub struct IndexerHandler {
+pub struct IndexerHandle {
     // TODO: This should be replaced with a CancellationToken
     // https://github.com/iotaledger/iota/issues/4383
     shutdown_tx: oneshot::Sender<()>,
     handle: JoinHandle<anyhow::Result<()>>,
 }
 
-impl IndexerHandler {
+impl IndexerHandle {
     /// Init the Checkpoint synchronization from a Fullnode
     pub async fn init(
         pool: ConnectionPool,
@@ -40,13 +40,13 @@ impl IndexerHandler {
         // Notify the IndexerExecutor to gracefully shutdown
         // NOTE: this will be replaced by a CancellationToken once this issue will be
         // resolved: https://github.com/iotaledger/iota/issues/4383
-        let (tx, rx) = tokio::sync::oneshot::channel();
+        let (exit_sender, exit_receiver) = tokio::sync::oneshot::channel();
 
-        // The IndexerExecutor handles the Sync and Fetch of checpoints from a Fullnode
+        // The IndexerExecutor handles the Sync and Fetch of checkpoints from a Fullnode
         let mut executor = IndexerExecutor::new(
-            // Read from file the latest syned checkpoint and start fetching the next checkpoint
+            // Read from file the latest synced checkpoint and start fetching the next checkpoint
             SqliteProgressStore::new(pool.clone()),
-            // Based on ho many workers do we have we may increaee this value, what it does under
+            // Based on how many workers do we have we may increase this value, what it does under
             // the hood is to calculate the channel capacity by this formula `number_of_jobs *
             // MAX_CHECKPOINTS_IN_PROGRESS`, where MAX_CHECKPOINTS_IN_PROGRESS = 10000
             1,
@@ -56,7 +56,7 @@ impl IndexerHandler {
         // Register the CheckpointWorker which will handle the CheckpointData once
         // fetched by the CheckpointReader
         let worker = WorkerPool::new(
-            CheckpointWorker::new(pool, indexer_config.package_id),
+            CheckpointWorker::new(pool, indexer_config.package_ids),
             "primary".to_owned(),
             indexer_config.download_queue_size,
         );
@@ -76,17 +76,17 @@ impl IndexerHandler {
                     vec![],
                     ReaderOptions {
                         batch_size: indexer_config.download_queue_size,
-                        data_limit: indexer_config.checkpoint_porcessing_batch_data_limit,
+                        data_limit: indexer_config.checkpoint_processing_batch_data_limit,
                         ..Default::default()
                     },
-                    rx,
+                    exit_receiver,
                 )
                 .await
                 .map(|_| ())
         });
 
         Ok(Self {
-            shutdown_tx: tx,
+            shutdown_tx: exit_sender,
             handle,
         })
     }
@@ -111,7 +111,7 @@ fn reset_database(pool: &ConnectionPool) -> anyhow::Result<()> {
 }
 
 #[async_trait]
-impl IntoSubsystem<anyhow::Error> for IndexerHandler {
+impl IntoSubsystem<anyhow::Error> for IndexerHandle {
     async fn run(self, subsys: SubsystemHandle) -> anyhow::Result<()> {
         subsys.on_shutdown_requested().await;
         self.graceful_shutdown().await

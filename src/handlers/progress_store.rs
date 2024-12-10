@@ -1,5 +1,5 @@
 //! The progress store is responsible for indicating the last synced checkpoint
-//! when teh Indexer restarts or crashes
+//! when the Indexer restarts or crashes
 
 use axum::async_trait;
 use diesel::prelude::*;

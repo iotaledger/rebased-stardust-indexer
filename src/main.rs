@@ -5,7 +5,7 @@ use std::time::Duration;
 
 use clap::Parser;
 use db::{ConnectionPool, ConnectionPoolConfig};
-use handlers::IndexerHandler;
+use handlers::IndexerHandle;
 use tokio_graceful_shutdown::{
     IntoSubsystem, SubsystemBuilder, Toplevel,
     errors::{GracefulShutdownError, SubsystemError},
@@ -51,7 +51,7 @@ async fn main() -> anyhow::Result<()> {
     connection_pool.run_migrations()?;
 
     // Spawn synchronization logic from a Fullnode
-    let indexer_hanle = IndexerHandler::init(connection_pool.clone(), opts.indexer_config).await?;
+    let indexer_handle = IndexerHandle::init(connection_pool.clone(), opts.indexer_config).await?;
 
     // Spawn the REST server
     let rest_api_handle = spawn_rest_server(
@@ -64,7 +64,7 @@ async fn main() -> anyhow::Result<()> {
     Toplevel::new(|s| async move {
         s.start(SubsystemBuilder::new(
             "IndexerHandle",
-            indexer_hanle.into_subsystem(),
+            indexer_handle.into_subsystem(),
         ));
         s.start(SubsystemBuilder::new(
             "RestApi",

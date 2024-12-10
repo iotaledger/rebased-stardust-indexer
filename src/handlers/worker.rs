@@ -1,5 +1,5 @@
-//! Workers are responsible for synching data from Fullnode into the Indexer, It
-//! can apply filtering logic to sotre only the desired data if necessary into a
+//! Workers are responsible for syncing data from Fullnode into the Indexer, It
+//! can apply filtering logic to store only the desired data if necessary into a
 //! local or remote storage
 
 use axum::async_trait;
