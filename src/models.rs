@@ -13,6 +13,8 @@ use diesel::{
     serialize::{IsNull, ToSql},
     sqlite::SqliteValue,
 };
+use iota_json_rpc_types::{IotaData, IotaParsedData};
+use iota_types::gas_coin::GAS;
 use num_enum::TryFromPrimitive;
 
 #[derive(Clone, Debug, PartialEq, Eq, Queryable, Selectable, Insertable)]
@@ -34,14 +36,19 @@ pub struct StoredObject {
     pub contents: Vec<u8>,
 }
 
+use iota_types::{IOTA_FRAMEWORK_ADDRESS, STARDUST_ADDRESS, balance::Balance, id::UID};
 #[cfg(test)]
 use iota_types::{
     base_types::SequenceNumber,
     digests::TransactionDigest,
-    gas_coin::GAS,
     object::{Data, MoveObject, Object, Owner},
     stardust::output::{basic::BasicOutput, nft::NftOutput},
     supported_protocol_versions::ProtocolConfig,
+};
+use move_core_types::{
+    annotated_value::{MoveFieldLayout, MoveStructLayout, MoveTypeLayout},
+    ident_str,
+    language_storage::StructTag,
 };
 
 #[cfg(test)]
@@ -120,6 +127,128 @@ impl TryFrom<iota_types::object::Object> for StoredObject {
             contents: move_object.into_contents(),
         })
     }
+}
+
+impl TryFrom<StoredObject> for IotaParsedData {
+    type Error = anyhow::Error;
+
+    fn try_from(stored: StoredObject) -> Result<Self, Self::Error> {
+        let layout = match stored.object_type {
+            ObjectType::Basic => layout_for_basic_output(),
+            ObjectType::Nft => layout_for_nft_output(),
+        };
+
+        Self::try_from_object(bcs::from_bytes(&stored.contents)?, layout)
+    }
+}
+
+fn layout_for_basic_output() -> MoveStructLayout {
+    let type_param = GAS::type_tag();
+    MoveStructLayout {
+        type_: iota_types::stardust::output::basic::BasicOutput::tag(type_param.clone()),
+        fields: vec![
+            MoveFieldLayout::new(
+                ident_str!("id").to_owned(),
+                MoveTypeLayout::Struct(UID::layout()),
+            ),
+            MoveFieldLayout::new(
+                ident_str!("balance").to_owned(),
+                MoveTypeLayout::Struct(Balance::layout(type_param)),
+            ),
+            MoveFieldLayout::new(
+                ident_str!("native_tokens").to_owned(),
+                MoveTypeLayout::Struct(MoveStructLayout {
+                    type_: StructTag {
+                        address: IOTA_FRAMEWORK_ADDRESS,
+                        module: ident_str!("bag").to_owned(),
+                        name: ident_str!("Bag").to_owned(),
+                        type_params: vec![],
+                    },
+                    fields: vec![
+                        MoveFieldLayout::new(
+                            ident_str!("id").to_owned(),
+                            MoveTypeLayout::Struct(UID::layout()),
+                        ),
+                        MoveFieldLayout::new(ident_str!("size").to_owned(), MoveTypeLayout::U64),
+                    ],
+                }),
+            ),
+            MoveFieldLayout::new(
+                ident_str!("storage_deposit_return").to_owned(),
+                MoveTypeLayout::Struct(MoveStructLayout {
+                    type_: StructTag {
+                        address: STARDUST_ADDRESS,
+                        module: ident_str!("unlocks_conditions").to_owned(),
+                        name: ident_str!("StorageDepositReturnUnlockCondition").to_owned(),
+                        type_params: vec![],
+                    },
+                    fields: vec![
+                        MoveFieldLayout::new(
+                            ident_str!("return_address").to_owned(),
+                            MoveTypeLayout::Address,
+                        ),
+                        MoveFieldLayout::new(
+                            ident_str!("return_amount").to_owned(),
+                            MoveTypeLayout::U64,
+                        ),
+                    ],
+                }),
+            ),
+            MoveFieldLayout::new(
+                ident_str!("timelock").to_owned(),
+                MoveTypeLayout::Struct(MoveStructLayout {
+                    type_: StructTag {
+                        address: STARDUST_ADDRESS,
+                        module: ident_str!("unlock_conditions").to_owned(),
+                        name: ident_str!("TimelockUnlockCondition").to_owned(),
+                        type_params: vec![],
+                    },
+                    fields: vec![MoveFieldLayout::new(
+                        ident_str!("unix_time").to_owned(),
+                        MoveTypeLayout::U32,
+                    )],
+                }),
+            ),
+            MoveFieldLayout::new(
+                ident_str!("expiration").to_owned(),
+                MoveTypeLayout::Struct(MoveStructLayout {
+                    type_: StructTag {
+                        address: STARDUST_ADDRESS,
+                        module: ident_str!("unlock_conditions").to_owned(),
+                        name: ident_str!("ExpirationUnlockCondition").to_owned(),
+                        type_params: vec![],
+                    },
+                    fields: vec![
+                        MoveFieldLayout::new(
+                            ident_str!("owner").to_owned(),
+                            MoveTypeLayout::Address,
+                        ),
+                        MoveFieldLayout::new(
+                            ident_str!("return_address").to_owned(),
+                            MoveTypeLayout::Address,
+                        ),
+                        MoveFieldLayout::new(
+                            ident_str!("unix_time").to_owned(),
+                            MoveTypeLayout::U32,
+                        ),
+                    ],
+                }),
+            ),
+            MoveFieldLayout::new(
+                ident_str!("metadata").to_owned(),
+                MoveTypeLayout::Vector(Box::new(MoveTypeLayout::U8)),
+            ),
+            MoveFieldLayout::new(
+                ident_str!("tag").to_owned(),
+                MoveTypeLayout::Vector(Box::new(MoveTypeLayout::U8)),
+            ),
+            MoveFieldLayout::new(ident_str!("sender").to_owned(), MoveTypeLayout::Address),
+        ],
+    }
+}
+
+fn layout_for_nft_output() -> MoveStructLayout {
+    unimplemented!()
 }
 
 impl TryFrom<StoredObject> for iota_types::stardust::output::basic::BasicOutput {

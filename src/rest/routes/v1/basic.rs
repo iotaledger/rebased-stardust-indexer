@@ -2,9 +2,13 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use axum::{Extension, Router, extract::Query, routing::get};
+use iota_json_rpc_types::IotaParsedData;
 use serde::{Deserialize, Serialize};
 use tracing::error;
-use utoipa::ToSchema;
+use utoipa::{
+    PartialSchema, ToSchema,
+    openapi::{ObjectBuilder, RefOr, Schema, SchemaFormat, Type},
+};
 
 use crate::{
     impl_into_response,
@@ -47,22 +51,40 @@ async fn basic(
 
     let basic_outputs = stored_objects
         .into_iter()
-        .map(|x| {
-            iota_types::stardust::output::basic::BasicOutput::try_from(x)
-                .map(BasicOutput::from)
-                .map_err(|e| {
-                    error!("failed to convert stored object to basic output: {}", e);
-                    ApiError::InternalServerError
-                })
-        })
-        .collect::<Result<Vec<_>, _>>()?;
+        .map(IotaParsedData::try_from) // Produces Result<IotaParsedData, _>
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(|e| {
+            println!("Failed to parse stored object: {:?}", e);
+            error!("Failed to parse stored object: {:?}", e);
+            ApiError::InternalServerError
+        })? // Collect into Vec<IotaParsedData> or return early on error
+        .into_iter()
+        .map(IotaParsedDataResponse) // Wrap into IotaParsedDataResponse
+        .collect();
 
     Ok(BasicResponse(basic_outputs))
 }
 
 #[derive(Clone, Debug, Serialize, ToSchema)]
-struct BasicResponse(Vec<BasicOutput>);
+struct BasicResponse(Vec<IotaParsedDataResponse>);
 impl_into_response!(BasicResponse);
+#[derive(Clone, Debug, Serialize)]
+struct IotaParsedDataResponse(IotaParsedData);
+
+impl PartialSchema for IotaParsedDataResponse {
+    fn schema() -> RefOr<Schema> {
+        let schema = schemars::schema_for!(IotaParsedData).schema; // Get the schemars schema
+        let json_value = serde_json::to_value(&schema).unwrap(); // Convert to serde_json::Value
+        RefOr::T(Schema::Object(
+            ObjectBuilder::new()
+                .schema_type(Type::Object)
+                .format(Some(SchemaFormat::Custom(json_value.to_string())))
+                .build(),
+        ))
+    }
+}
+
+impl ToSchema for IotaParsedDataResponse {}
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, ToSchema)]
 struct BasicOutput {
@@ -216,6 +238,17 @@ mod tests {
             owner_address.to_string()
         ))
         .await?;
+
+        let resp2 = reqwest::get(format!(
+            "http://127.0.0.1:{}/v1/basic/{}",
+            bind_port,
+            owner_address.to_string()
+        ))
+        .await?;
+
+        let string_res = resp2.text().await?;
+
+        println!("Response: {:?}", string_res);
 
         let basic_outputs: Vec<BasicOutput> = resp.json().await?;
         assert_eq!(basic_outputs.len(), 2);

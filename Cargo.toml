@@ -15,8 +15,12 @@ diesel_migrations = { version = "2.2.0", features = ["sqlite"] }
 # uncomment this line if you run into setup issues
 # libsqlite3-sys = { version = "0.30", features = ["bundled"] }
 dotenvy = "0.15"
+iota-json-rpc-types = { git = "https://github.com/iotaledger/iota.git", tag = "v0.7.2-rc", version = "0.7.2-rc" }
 iota-types = { git = "https://github.com/iotaledger/iota.git", tag = "v0.7.2-rc", version = "0.7.2-rc" }
+move-core-types = { git = "https://github.com/iotaledger/iota.git", tag = "v0.7.2-rc" }
 num_enum = "0.7.3"
+schemars = "0.8.21"
+serde_json = "1.0.133"
 serde = "1.0.215"
 thiserror = "2.0.3"
 tracing = "0.1.41"
