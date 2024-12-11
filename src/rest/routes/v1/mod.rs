@@ -12,8 +12,8 @@ use crate::{
     schema::{expiration_unlock_conditions::dsl::*, objects::dsl::*},
 };
 
-mod basic;
-mod nft;
+pub(crate) mod basic;
+pub(crate) mod nft;
 
 pub(crate) fn router() -> Router {
     Router::new().nest("/v1", basic::router().merge(nft::router()))
