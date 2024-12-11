@@ -2,18 +2,15 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use axum::{Extension, Router, extract::Query, routing::get};
-use serde::{Deserialize, Serialize};
 use tracing::error;
-use utoipa::ToSchema;
 
 use crate::{
-    impl_into_response,
     models::ObjectType,
     rest::{
         State,
         error::ApiError,
         extractors::Path,
-        routes::v1::{PaginationParams, fetch_stored_objects},
+        routes::v1::{PaginationParams, fetch_stored_objects, responses::*},
     },
 };
 
@@ -26,7 +23,7 @@ pub(crate) fn router() -> Router {
     get,
     path = "/v1/basic/{address}",
     responses(
-        (status = 200, description = "Successful request", body = BasicResponse),
+        (status = 200, description = "Successful request", body = BasicVec),
         (status = 400, description = "Bad request"),
         (status = 500, description = "Internal server error"),
         (status = 503, description = "Service unavailable"),
@@ -42,7 +39,7 @@ async fn basic(
     Path(address): Path<iota_types::base_types::IotaAddress>,
     Query(pagination): Query<PaginationParams>,
     Extension(state): Extension<State>,
-) -> Result<BasicResponse, ApiError> {
+) -> Result<BasicVec, ApiError> {
     let stored_objects = fetch_stored_objects(address, pagination, state, ObjectType::Basic)?;
 
     let basic_outputs = stored_objects
@@ -57,83 +54,7 @@ async fn basic(
         })
         .collect::<Result<Vec<_>, _>>()?;
 
-    Ok(BasicResponse(basic_outputs))
-}
-
-#[derive(Clone, Debug, Serialize, ToSchema)]
-struct BasicResponse(Vec<BasicOutput>);
-impl_into_response!(BasicResponse);
-
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, ToSchema)]
-struct BasicOutput {
-    id: String,
-    balance: Balance,
-    native_tokens: Bag,
-    storage_deposit_return: Option<StorageDepositReturn>,
-    timelock: Option<Timelock>,
-    expiration: Option<Expiration>,
-    metadata: Option<Vec<u8>>,
-    tag: Option<Vec<u8>>,
-    sender: Option<String>,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, ToSchema)]
-struct Balance {
-    value: u64,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, ToSchema)]
-struct Bag {
-    id: String,
-    size: u64,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, ToSchema)]
-struct StorageDepositReturn {
-    return_address: String,
-    return_amount: u64,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, ToSchema)]
-struct Timelock {
-    unix_time: u64,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, ToSchema)]
-struct Expiration {
-    owner: String,
-    return_address: String,
-    unix_time: u64,
-}
-
-impl From<iota_types::stardust::output::basic::BasicOutput> for BasicOutput {
-    fn from(output: iota_types::stardust::output::basic::BasicOutput) -> Self {
-        Self {
-            id: output.id.object_id().to_string(),
-            balance: Balance {
-                value: output.balance.value(),
-            },
-            native_tokens: Bag {
-                id: output.native_tokens.id.object_id().to_string(),
-                size: output.native_tokens.size,
-            },
-            storage_deposit_return: output.storage_deposit_return.map(|x| StorageDepositReturn {
-                return_address: x.return_address.to_string(),
-                return_amount: x.return_amount,
-            }),
-            timelock: output.timelock.map(|x| Timelock {
-                unix_time: x.unix_time as u64,
-            }),
-            expiration: output.expiration.map(|x| Expiration {
-                owner: x.owner.to_string(),
-                return_address: x.return_address.to_string(),
-                unix_time: x.unix_time as u64,
-            }),
-            metadata: output.metadata,
-            tag: output.tag,
-            sender: output.sender.map(|x| x.to_string()),
-        }
-    }
+    Ok(BasicVec(basic_outputs))
 }
 
 #[cfg(test)]
