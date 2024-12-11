@@ -15,7 +15,7 @@ mod config;
 mod progress_store;
 mod worker;
 
-/// The `IndexerHandler` is the main logic behind the checkpoint
+/// The `IndexerHandle` is the main logic behind the checkpoint
 /// synchronization from a Fullnode, it handles the initialization and execution
 /// of the `IndexerExecutor` in background in as task and provide an interface
 /// to gracefully shutdown it
