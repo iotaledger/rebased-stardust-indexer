@@ -7,6 +7,7 @@ use axum::{Extension, Router, response::IntoResponse};
 use tokio::task::JoinHandle;
 use tokio_util::sync::CancellationToken;
 use tracing::{error, info};
+use utoipa::OpenApi;
 
 use crate::{
     db::ConnectionPool,
@@ -16,6 +17,16 @@ use crate::{
 mod error;
 mod extractors;
 mod routes;
+
+#[derive(OpenApi)]
+#[openapi(
+    paths(
+        routes::v1::basic::basic,
+        routes::v1::nft::nft
+    ),
+    servers((url = "http://localhost:3000"))
+)]
+pub struct ApiDoc;
 
 #[derive(Clone)]
 pub(crate) struct State {

@@ -8,6 +8,7 @@ use axum::{
 };
 use serde::Serialize;
 use thiserror::Error;
+use utoipa::ToSchema;
 
 #[derive(Error, Debug)]
 pub(crate) enum ApiError {
@@ -30,7 +31,7 @@ impl IntoResponse for ApiError {
             ApiError::Forbidden => StatusCode::FORBIDDEN,
         };
 
-        let body = Json(ErrorBody {
+        let body = Json(ErrorResponse {
             error_code: status_code.as_u16().to_string(),
             error_message: self.to_string(),
         });
@@ -40,8 +41,8 @@ impl IntoResponse for ApiError {
 }
 
 /// Describes the response body of a unsuccessful HTTP request.
-#[derive(Clone, Debug, Serialize)]
-struct ErrorBody {
+#[derive(Clone, Debug, Serialize, ToSchema)]
+pub(crate) struct ErrorResponse {
     error_code: String,
     error_message: String,
 }
