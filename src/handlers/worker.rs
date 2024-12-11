@@ -70,7 +70,7 @@ impl Worker for CheckpointWorker {
                 .transactions
                 .into_iter()
                 .fold(Vec::new(), |mut stored_objects, tx| {
-                    let object_belongs_to_package =
+                    let tx_contains_relevant_objects =
                         tx.transaction.intent_message().value.is_genesis_tx()
                             || tx.input_objects.iter().any(|obj| {
                                 obj.is_package()
@@ -80,7 +80,7 @@ impl Worker for CheckpointWorker {
                                         .any(|package_id| &obj.id() == package_id)
                             });
 
-                    if object_belongs_to_package {
+                    if tx_contains_relevant_objects {
                         stored_objects.extend(
                             tx.output_objects
                                 .into_iter()
