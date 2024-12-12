@@ -9,13 +9,12 @@ use iota_types::{
     base_types::ObjectID,
     full_checkpoint_content::{CheckpointData, CheckpointTransaction},
     object::Object,
-    stardust::output::{BasicOutput, NftOutput},
     transaction::TransactionDataAPI,
 };
 
 use crate::{
     db::ConnectionPool,
-    models::{ExpirationUnlockCondition, ObjectType, StoredObject},
+    models::{ExpirationUnlockCondition, StoredObject},
     schema::{expiration_unlock_conditions::dsl::*, objects::dsl::*},
 };
 
@@ -60,10 +59,10 @@ impl CheckpointWorker {
     /// record is updated with the new values.
     fn multi_insert_as_database_transactions(
         &self,
-        data: Vec<(StoredObject, ExpirationUnlockCondition)>,
+        stored_objects: Vec<StoredObject>,
     ) -> anyhow::Result<()> {
         let mut pool = self.pool.get_connection()?;
-        for (stored_object, expiration_uc) in data {
+        for stored_object in stored_objects {
             pool.transaction::<_, anyhow::Error, _>(|conn| {
                 insert_into(objects)
                     .values(&stored_object)
@@ -72,11 +71,13 @@ impl CheckpointWorker {
                     .set(&stored_object)
                     .execute(conn)?;
 
+                let eu = ExpirationUnlockCondition::try_from(stored_object)?;
+
                 insert_into(expiration_unlock_conditions)
-                    .values(&expiration_uc)
+                    .values(&eu)
                     .on_conflict(object_id)
                     .do_update()
-                    .set(&expiration_uc)
+                    .set(&eu)
                     .execute(conn)?;
 
                 Ok(())
@@ -103,23 +104,7 @@ impl Worker for CheckpointWorker {
             }
         }
 
-        let data = stored_objects
-            .into_iter()
-            .map(|stored_object| {
-                let expiration_uc = match stored_object.object_type {
-                    ObjectType::Basic => ExpirationUnlockCondition::try_from(
-                        BasicOutput::try_from(stored_object.clone())?,
-                    )?,
-                    ObjectType::Nft => ExpirationUnlockCondition::try_from(NftOutput::try_from(
-                        stored_object.clone(),
-                    )?)?,
-                };
-
-                Ok((stored_object, expiration_uc))
-            })
-            .collect::<anyhow::Result<Vec<(StoredObject, ExpirationUnlockCondition)>>>()?;
-
-        self.multi_insert_as_database_transactions(data)?;
+        self.multi_insert_as_database_transactions(stored_objects)?;
 
         Ok(())
     }

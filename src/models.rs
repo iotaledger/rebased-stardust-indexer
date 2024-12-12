@@ -66,6 +66,21 @@ impl TryFrom<iota_types::stardust::output::nft::NftOutput> for ExpirationUnlockC
     }
 }
 
+impl TryFrom<StoredObject> for ExpirationUnlockCondition {
+    type Error = anyhow::Error;
+
+    fn try_from(stored_object: StoredObject) -> Result<Self, Self::Error> {
+        match stored_object.object_type {
+            ObjectType::Basic => Self::try_from(
+                iota_types::stardust::output::basic::BasicOutput::try_from(stored_object)?,
+            ),
+            ObjectType::Nft => Self::try_from(
+                iota_types::stardust::output::nft::NftOutput::try_from(stored_object)?,
+            ),
+        }
+    }
+}
+
 #[derive(Clone, Debug, PartialEq, Eq, Queryable, Selectable, Insertable, AsChangeset)]
 #[diesel(table_name = crate::schema::objects)]
 #[diesel(check_for_backend(diesel::sqlite::Sqlite))]
