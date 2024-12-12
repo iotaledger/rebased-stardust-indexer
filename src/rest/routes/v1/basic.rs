@@ -10,7 +10,10 @@ use crate::{
         State,
         error::ApiError,
         extractors::Path,
-        routes::v1::{PaginationParams, fetch_stored_objects, responses::*},
+        routes::v1::{
+            PaginationParams, fetch_stored_objects,
+            responses::{BasicOutput, BasicOutputVec},
+        },
     },
 };
 
@@ -23,7 +26,7 @@ pub(crate) fn router() -> Router {
     get,
     path = "/v1/basic/{address}",
     responses(
-        (status = 200, description = "Successful request", body = BasicVec),
+        (status = 200, description = "Successful request", body = BasicOutputVec),
         (status = 400, description = "Bad request"),
         (status = 500, description = "Internal server error"),
         (status = 503, description = "Service unavailable"),
@@ -39,7 +42,7 @@ async fn basic(
     Path(address): Path<iota_types::base_types::IotaAddress>,
     Query(pagination): Query<PaginationParams>,
     Extension(state): Extension<State>,
-) -> Result<BasicVec, ApiError> {
+) -> Result<BasicOutputVec, ApiError> {
     let stored_objects = fetch_stored_objects(address, pagination, state, ObjectType::Basic)?;
 
     let basic_outputs = stored_objects
@@ -54,7 +57,7 @@ async fn basic(
         })
         .collect::<Result<Vec<_>, _>>()?;
 
-    Ok(BasicVec(basic_outputs))
+    Ok(BasicOutputVec(basic_outputs))
 }
 
 #[cfg(test)]

@@ -82,12 +82,12 @@ pub(crate) mod responses {
     use crate::impl_into_response;
 
     #[derive(Clone, Debug, Serialize, ToSchema)]
-    pub(crate) struct BasicVec(pub(crate) Vec<BasicOutput>);
-    impl_into_response!(BasicVec);
+    pub(crate) struct BasicOutputVec(pub(crate) Vec<BasicOutput>);
+    impl_into_response!(BasicOutputVec);
 
     #[derive(Clone, Debug, Serialize, ToSchema)]
-    pub(crate) struct NftVec(pub(crate) Vec<NftOutput>);
-    impl_into_response!(NftVec);
+    pub(crate) struct NftOutputVec(pub(crate) Vec<NftOutput>);
+    impl_into_response!(NftOutputVec);
 
     #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, ToSchema)]
     pub(crate) struct BasicOutput {

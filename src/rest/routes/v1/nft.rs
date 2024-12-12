@@ -10,7 +10,10 @@ use crate::{
         State,
         error::ApiError,
         extractors::Path,
-        routes::v1::{PaginationParams, fetch_stored_objects, responses::*},
+        routes::v1::{
+            PaginationParams, fetch_stored_objects,
+            responses::{NftOutput, NftOutputVec},
+        },
     },
 };
 
@@ -23,7 +26,7 @@ pub(crate) fn router() -> Router {
     get,
     path = "/v1/nft/{address}",
     responses(
-        (status = 200, description = "Successful request", body = NftVec),
+        (status = 200, description = "Successful request", body = NftOutputVec),
         (status = 400, description = "Bad request"),
         (status = 500, description = "Internal server error"),
         (status = 503, description = "Service unavailable"),
@@ -39,7 +42,7 @@ async fn nft(
     Path(address): Path<iota_types::base_types::IotaAddress>,
     Query(pagination): Query<PaginationParams>,
     Extension(state): Extension<State>,
-) -> Result<NftVec, ApiError> {
+) -> Result<NftOutputVec, ApiError> {
     let stored_objects = fetch_stored_objects(address, pagination, state, ObjectType::Nft)?;
 
     let nft_outputs: Vec<NftOutput> = stored_objects
@@ -54,7 +57,7 @@ async fn nft(
         })
         .collect::<Result<Vec<_>, _>>()?;
 
-    Ok(NftVec(nft_outputs))
+    Ok(NftOutputVec(nft_outputs))
 }
 
 #[cfg(test)]
