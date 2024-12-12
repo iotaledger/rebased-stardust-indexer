@@ -1,33 +1,31 @@
 //! Checkpoint syncing Handlers for the Indexer
 
 use axum::async_trait;
-pub use config::IndexerConfig;
 use iota_data_ingestion_core::{DataIngestionMetrics, IndexerExecutor, ReaderOptions, WorkerPool};
-use progress_store::SqliteProgressStore;
 use prometheus::Registry;
 use tokio::{sync::oneshot, task::JoinHandle};
 use tokio_graceful_shutdown::{IntoSubsystem, SubsystemHandle};
-use worker::CheckpointWorker;
 
-use crate::db::ConnectionPool;
+use crate::{
+    db::ConnectionPool,
+    sync::{IndexerConfig, progress_store::SqliteProgressStore, worker::CheckpointWorker},
+};
 
-mod config;
-mod progress_store;
-mod worker;
-
-/// The `IndexerHandle` is the main logic behind the checkpoint
-/// synchronization from a Fullnode, it handles the initialization and execution
+/// The `Indexer` encapsulates the main logic behind the checkpoint
+/// synchronization from a Fullnode.
+///
+/// It handles the initialization and execution
 /// of the `IndexerExecutor` in background in as task and provide an interface
 /// to gracefully shutdown it
 #[derive(Debug)]
-pub struct IndexerHandle {
+pub struct Indexer {
     // TODO: This should be replaced with a CancellationToken
     // https://github.com/iotaledger/iota/issues/4383
     shutdown_tx: oneshot::Sender<()>,
     handle: JoinHandle<anyhow::Result<()>>,
 }
 
-impl IndexerHandle {
+impl Indexer {
     /// Init the Checkpoint synchronization from a Fullnode
     pub async fn init(
         pool: ConnectionPool,
@@ -56,16 +54,13 @@ impl IndexerHandle {
         // Register the CheckpointWorker which will handle the CheckpointData once
         // fetched by the CheckpointReader
         let worker = WorkerPool::new(
-            CheckpointWorker::new(pool, indexer_config.package_ids),
+            CheckpointWorker::new(pool, indexer_config.package_id),
             "primary".to_owned(),
             indexer_config.download_queue_size,
         );
         executor.register(worker).await?;
 
-        let data_ingestion_path = indexer_config.data_ingestion_path.map_or_else(
-            || tempfile::tempdir().map(|tmp_dir| tmp_dir.into_path()),
-            Ok,
-        )?;
+        let data_ingestion_path = tempfile::tempdir()?.into_path();
 
         // Run the IndexerExecutor in a separate task
         let handle = tokio::spawn(async move {
@@ -93,7 +88,7 @@ impl IndexerHandle {
 
     /// Sends a Shutdown Signal to the `IndexerExecutor` and wait for the task
     /// to finish, this will block the execution
-    #[tracing::instrument(name = "IndexerHandle", skip(self), err)]
+    #[tracing::instrument(name = "Indexer", skip(self), err)]
     pub async fn graceful_shutdown(self) -> anyhow::Result<()> {
         tracing::info!("Received shutdown Signal");
         _ = self.shutdown_tx.send(());
@@ -111,7 +106,7 @@ fn reset_database(pool: &ConnectionPool) -> anyhow::Result<()> {
 }
 
 #[async_trait]
-impl IntoSubsystem<anyhow::Error> for IndexerHandle {
+impl IntoSubsystem<anyhow::Error> for Indexer {
     async fn run(self, subsys: SubsystemHandle) -> anyhow::Result<()> {
         subsys.on_shutdown_requested().await;
         self.graceful_shutdown().await

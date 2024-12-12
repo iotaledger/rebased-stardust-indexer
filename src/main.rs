@@ -5,7 +5,6 @@ use std::time::Duration;
 
 use clap::Parser;
 use db::{ConnectionPool, ConnectionPoolConfig};
-use handlers::IndexerHandle;
 use tokio_graceful_shutdown::{
     IntoSubsystem, SubsystemBuilder, Toplevel,
     errors::{GracefulShutdownError, SubsystemError},
@@ -13,13 +12,16 @@ use tokio_graceful_shutdown::{
 use tracing::Level;
 use tracing_subscriber::FmtSubscriber;
 
-use crate::{handlers::IndexerConfig, rest::spawn_rest_server};
+use crate::{
+    rest::spawn_rest_server,
+    sync::{Indexer, IndexerConfig},
+};
 
 mod db;
-mod handlers;
 mod models;
 mod rest;
 mod schema;
+mod sync;
 
 use tokio_util::sync::CancellationToken;
 
@@ -51,7 +53,7 @@ async fn main() -> anyhow::Result<()> {
     connection_pool.run_migrations()?;
 
     // Spawn synchronization logic from a Fullnode
-    let indexer_handle = IndexerHandle::init(connection_pool.clone(), opts.indexer_config).await?;
+    let indexer_handle = Indexer::init(connection_pool.clone(), opts.indexer_config).await?;
 
     // Spawn the REST server
     let rest_api_handle = spawn_rest_server(
@@ -63,7 +65,7 @@ async fn main() -> anyhow::Result<()> {
     // Register the subsystems we want to notify for a graceful shutdown
     Toplevel::new(|s| async move {
         s.start(SubsystemBuilder::new(
-            "IndexerHandle",
+            "Indexer",
             indexer_handle.into_subsystem(),
         ));
         s.start(SubsystemBuilder::new(

@@ -1,5 +1,7 @@
 //! The progress store is responsible for indicating the last synced checkpoint
 //! when the Indexer restarts or crashes
+//!
+//! It is required by the `iota-data-ingestion-core`
 
 use axum::async_trait;
 use diesel::prelude::*;
