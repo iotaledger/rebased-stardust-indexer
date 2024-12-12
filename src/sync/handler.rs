@@ -101,6 +101,6 @@ impl Indexer {
 
 /// Reset the database by reverting all migrations
 fn reset_database(pool: &ConnectionPool) -> anyhow::Result<()> {
-    pool.revert_all_migrations()
-        .and_then(|_| pool.run_migrations())
+    pool.revert_all_migrations()?;
+    pool.run_migrations()
 }

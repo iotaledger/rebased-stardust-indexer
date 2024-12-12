@@ -3,7 +3,7 @@
 //! local or remote storage
 
 use axum::async_trait;
-use diesel::{RunQueryDsl, insert_into};
+use diesel::{Connection, RunQueryDsl, insert_into};
 use iota_data_ingestion_core::Worker;
 use iota_types::{
     base_types::ObjectID,
@@ -39,8 +39,8 @@ impl CheckpointWorker {
         obj.is_package() && (obj.id() == self.package_id)
     }
 
-    // Check if the `CheckpointTransaction` is a genesis transaction or contains
-    // input objects belonging to the package ID.
+    /// Check if the `CheckpointTransaction` is a genesis transaction or
+    /// contains input objects belonging to the package ID.
     fn tx_contains_relevant_objects(&self, checkpoint_tx: &CheckpointTransaction) -> bool {
         checkpoint_tx
             .transaction
@@ -53,27 +53,35 @@ impl CheckpointWorker {
                 .any(|obj| self.object_belongs_to_package(obj))
     }
 
-    /// Insert multiple `StoredObject` into database
-    fn insert_stored_objects(&self, stored_objects: &[StoredObject]) -> anyhow::Result<()> {
-        let mut pool = self.pool.get_connection()?;
-
-        insert_into(objects)
-            .values(stored_objects)
-            .execute(&mut pool)?;
-
-        Ok(())
-    }
-
-    /// Insert multiple `ExpirationUnlockCondition` into database
-    fn insert_expiration_unlock_conditions(
+    /// This function iterates over `StoredObject` and
+    /// `ExpirationUnlockCondition` pairs, for each pair it creates a database
+    /// transaction, and inserts both the object and its expiration
+    /// condition. If a conflict arises during the insertion, the existing
+    /// record is updated with the new values.
+    fn multi_insert_as_database_transactions(
         &self,
-        expiration: &[ExpirationUnlockCondition],
+        data: Vec<(StoredObject, ExpirationUnlockCondition)>,
     ) -> anyhow::Result<()> {
         let mut pool = self.pool.get_connection()?;
+        for (stored_object, expiration_uc) in data {
+            pool.transaction::<_, anyhow::Error, _>(|conn| {
+                insert_into(objects)
+                    .values(&stored_object)
+                    .on_conflict(id)
+                    .do_update()
+                    .set(&stored_object)
+                    .execute(conn)?;
 
-        insert_into(expiration_unlock_conditions)
-            .values(expiration)
-            .execute(&mut pool)?;
+                insert_into(expiration_unlock_conditions)
+                    .values(&expiration_uc)
+                    .on_conflict(object_id)
+                    .do_update()
+                    .set(&expiration_uc)
+                    .execute(conn)?;
+
+                Ok(())
+            })?;
+        }
 
         Ok(())
     }
@@ -95,20 +103,23 @@ impl Worker for CheckpointWorker {
             }
         }
 
-        self.insert_stored_objects(&stored_objects)?;
-
-        let expiration_uc = stored_objects
+        let data = stored_objects
             .into_iter()
-            .map(|stored_object| match stored_object.object_type {
-                ObjectType::Basic => BasicOutput::try_from(stored_object)
-                    .and_then(ExpirationUnlockCondition::try_from),
-                ObjectType::Nft => {
-                    NftOutput::try_from(stored_object).and_then(ExpirationUnlockCondition::try_from)
-                }
-            })
-            .collect::<anyhow::Result<Vec<ExpirationUnlockCondition>>>()?;
+            .map(|stored_object| {
+                let expiration_uc = match stored_object.object_type {
+                    ObjectType::Basic => ExpirationUnlockCondition::try_from(
+                        BasicOutput::try_from(stored_object.clone())?,
+                    )?,
+                    ObjectType::Nft => ExpirationUnlockCondition::try_from(NftOutput::try_from(
+                        stored_object.clone(),
+                    )?)?,
+                };
 
-        self.insert_expiration_unlock_conditions(&expiration_uc)?;
+                Ok((stored_object, expiration_uc))
+            })
+            .collect::<anyhow::Result<Vec<(StoredObject, ExpirationUnlockCondition)>>>()?;
+
+        self.multi_insert_as_database_transactions(data)?;
 
         Ok(())
     }

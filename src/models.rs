@@ -15,7 +15,7 @@ use diesel::{
 };
 use num_enum::TryFromPrimitive;
 
-#[derive(Clone, Debug, PartialEq, Eq, Queryable, Selectable, Insertable)]
+#[derive(Clone, Debug, PartialEq, Eq, Queryable, Selectable, Insertable, AsChangeset)]
 #[diesel(table_name = crate::schema::expiration_unlock_conditions)]
 #[diesel(check_for_backend(diesel::sqlite::Sqlite))]
 pub struct ExpirationUnlockCondition {
@@ -66,7 +66,7 @@ impl TryFrom<iota_types::stardust::output::nft::NftOutput> for ExpirationUnlockC
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Queryable, Selectable, Insertable)]
+#[derive(Clone, Debug, PartialEq, Eq, Queryable, Selectable, Insertable, AsChangeset)]
 #[diesel(table_name = crate::schema::objects)]
 #[diesel(check_for_backend(diesel::sqlite::Sqlite))]
 pub struct StoredObject {

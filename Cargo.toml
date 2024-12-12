@@ -7,7 +7,7 @@ edition = "2021"
 anyhow = "1.0.93"
 axum = "0.7.9"
 bcs = "0.1.6"
-clap = { version = "4.5.21", features = ["derive", "env", "string"] }
+clap = { version = "4.5.21", features = ["derive", "env"] }
 derive_more = { version = "1.0.0", features = ["into", "from"] }
 diesel = { version = "2.2.0", features = [
     "sqlite",
