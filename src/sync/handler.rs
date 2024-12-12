@@ -1,15 +1,18 @@
 //! Checkpoint syncing Handlers for the Indexer
 
-use axum::async_trait;
+use std::collections::HashMap;
+
 use iota_data_ingestion_core::{DataIngestionMetrics, IndexerExecutor, ReaderOptions, WorkerPool};
+use iota_types::messages_checkpoint::CheckpointSequenceNumber;
 use prometheus::Registry;
 use tokio::{sync::oneshot, task::JoinHandle};
-use tokio_graceful_shutdown::{IntoSubsystem, SubsystemHandle};
 
 use crate::{
     db::ConnectionPool,
     sync::{IndexerConfig, progress_store::SqliteProgressStore, worker::CheckpointWorker},
 };
+
+type ExecutorProgress = HashMap<String, CheckpointSequenceNumber>;
 
 /// The `Indexer` encapsulates the main logic behind the checkpoint
 /// synchronization from a Fullnode.
@@ -22,7 +25,7 @@ pub struct Indexer {
     // TODO: This should be replaced with a CancellationToken
     // https://github.com/iotaledger/iota/issues/4383
     shutdown_tx: oneshot::Sender<()>,
-    handle: JoinHandle<anyhow::Result<()>>,
+    handle: JoinHandle<anyhow::Result<ExecutorProgress>>,
 }
 
 impl Indexer {
@@ -63,22 +66,17 @@ impl Indexer {
         let data_ingestion_path = tempfile::tempdir()?.into_path();
 
         // Run the IndexerExecutor in a separate task
-        let handle = tokio::spawn(async move {
-            executor
-                .run(
-                    data_ingestion_path,
-                    Some(indexer_config.remote_store_url.to_string()),
-                    vec![],
-                    ReaderOptions {
-                        batch_size: indexer_config.download_queue_size,
-                        data_limit: indexer_config.checkpoint_processing_batch_data_limit,
-                        ..Default::default()
-                    },
-                    exit_receiver,
-                )
-                .await
-                .map(|_| ())
-        });
+        let handle = tokio::spawn(executor.run(
+            data_ingestion_path,
+            Some(indexer_config.remote_store_url.to_string()),
+            vec![],
+            ReaderOptions {
+                batch_size: indexer_config.download_queue_size,
+                data_limit: indexer_config.checkpoint_processing_batch_data_limit,
+                ..Default::default()
+            },
+            exit_receiver,
+        ));
 
         Ok(Self {
             shutdown_tx: exit_sender,
@@ -95,7 +93,9 @@ impl Indexer {
         tracing::info!("Wait for task to shutdown");
         self.handle
             .await?
-            .inspect(|_| tracing::info!("Task shutdown successfully"))
+            .inspect(|_| tracing::info!("Task shutdown successfully"))?;
+
+        Ok(())
     }
 }
 
@@ -103,12 +103,4 @@ impl Indexer {
 fn reset_database(pool: &ConnectionPool) -> anyhow::Result<()> {
     pool.revert_all_migrations()
         .and_then(|_| pool.run_migrations())
-}
-
-#[async_trait]
-impl IntoSubsystem<anyhow::Error> for Indexer {
-    async fn run(self, subsys: SubsystemHandle) -> anyhow::Result<()> {
-        subsys.on_shutdown_requested().await;
-        self.graceful_shutdown().await
-    }
 }

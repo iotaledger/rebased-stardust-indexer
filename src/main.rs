@@ -1,14 +1,8 @@
 // Copyright (c) 2024 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-use std::time::Duration;
-
 use clap::Parser;
 use db::{ConnectionPool, ConnectionPoolConfig};
-use tokio_graceful_shutdown::{
-    IntoSubsystem, SubsystemBuilder, Toplevel,
-    errors::{GracefulShutdownError, SubsystemError},
-};
 use tracing::Level;
 use tracing_subscriber::FmtSubscriber;
 
@@ -55,47 +49,27 @@ async fn main() -> anyhow::Result<()> {
     // Spawn synchronization logic from a Fullnode
     let indexer_handle = Indexer::init(connection_pool.clone(), opts.indexer_config).await?;
 
-    // Spawn the REST server
-    let rest_api_handle = spawn_rest_server(
-        opts.rest_api_socket_address,
-        connection_pool,
-        CancellationToken::new(),
-    );
+    let token = CancellationToken::new();
+    let cloned_token = token.clone();
+    tokio::spawn(async move {
+        tokio::signal::ctrl_c()
+            .await
+            .expect("failed to listen for CTRL+C");
+        tracing::info!("CTRL+C received, shutting down.");
+        cloned_token.cancel();
+        indexer_handle.graceful_shutdown().await
+    });
 
-    // Register the subsystems we want to notify for a graceful shutdown
-    Toplevel::new(|s| async move {
-        s.start(SubsystemBuilder::new(
-            "Indexer",
-            indexer_handle.into_subsystem(),
-        ));
-        s.start(SubsystemBuilder::new(
-            "RestApi",
-            rest_api_handle.into_subsystem(),
-        ));
-    })
-    .catch_signals()
-    .handle_shutdown_requests(Duration::from_millis(1000))
-    .await
-    .inspect_err(log_subsystem_error)
-    .map_err(Into::into)
+    // Spawn the REST server
+    _ = spawn_rest_server(opts.rest_api_socket_address, connection_pool, token)
+        .await
+        .inspect_err(|e| tracing::error!("REST server terminated with error: {e}"));
+
+    Ok(())
 }
 
 /// Initialize the tracing with custom subsribers
 fn init_tracing(log_level: Level) {
     let subscriber = FmtSubscriber::builder().with_max_level(log_level).finish();
     tracing::subscriber::set_global_default(subscriber).expect("setting default subscriber failed");
-}
-
-/// Log subsystem errors
-fn log_subsystem_error(err: &GracefulShutdownError) {
-    for subsystem_error in err.get_subsystem_errors() {
-        match subsystem_error {
-            SubsystemError::Failed(name, e) => {
-                tracing::error!("subsystem '{name}' failed: {}", e.get_error());
-            }
-            SubsystemError::Panicked(name) => {
-                tracing::error!("subsystem '{name}' panicked")
-            }
-        }
-    }
 }
