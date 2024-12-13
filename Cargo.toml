@@ -9,22 +9,32 @@ axum = "0.7.9"
 bcs = "0.1.6"
 clap = { version = "4.5.21", features = ["derive", "env"] }
 derive_more = { version = "1.0.0", features = ["into", "from"] }
-diesel = { version = "2.2.0", features = ["sqlite", "returning_clauses_for_sqlite_3_35", "r2d2"] }
+diesel = { version = "2.2.0", features = [
+    "sqlite",
+    "returning_clauses_for_sqlite_3_35",
+    "r2d2",
+] }
 diesel_migrations = { version = "2.2.0", features = ["sqlite"] }
 # build libsqlite3 as part of the build process
 # uncomment this line if you run into setup issues
 # libsqlite3-sys = { version = "0.30", features = ["bundled"] }
+
 dotenvy = "0.15"
 iota-types = { git = "https://github.com/iotaledger/iota.git", tag = "v0.7.2-rc", version = "0.7.2-rc" }
+iota-data-ingestion-core = { git = "https://github.com/iotaledger/iota.git", tag = "v0.7.2-rc", version = "0.7.2-rc" }
 num_enum = "0.7.3"
+prometheus = "0.13.4"
+tempfile = "3.14.0"
+tokio = { version = "1.39.2", features = ["rt-multi-thread", "signal"] }
+url = "2.5.4"
+tracing = { version = "0.1.41", features = ["attributes"] }
+tracing-subscriber = "0.3.19"
 serde = "1.0.215"
 thiserror = "2.0.3"
-tracing = "0.1.41"
-tracing-subscriber = "0.3.19"
-tokio = { version = "1.39.2", features = ["rt-multi-thread", "signal"] }
 tokio-util = "0.7.13"
 
 [dev-dependencies]
-iota-types = { git = "https://github.com/iotaledger/iota.git", tag = "v0.7.2-rc", version = "0.7.2-rc", features = ["test-utils"]}
+iota-types = { git = "https://github.com/iotaledger/iota.git", tag = "v0.7.2-rc", version = "0.7.2-rc", features = [
+    "test-utils",
+] }
 reqwest = "0.12.9"
-

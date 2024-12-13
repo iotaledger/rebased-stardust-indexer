@@ -15,17 +15,73 @@ use diesel::{
 };
 use num_enum::TryFromPrimitive;
 
-#[derive(Clone, Debug, PartialEq, Eq, Queryable, Selectable, Insertable)]
+#[derive(Clone, Debug, PartialEq, Eq, Queryable, Selectable, Insertable, AsChangeset)]
 #[diesel(table_name = crate::schema::expiration_unlock_conditions)]
 #[diesel(check_for_backend(diesel::sqlite::Sqlite))]
 pub struct ExpirationUnlockCondition {
     pub owner: IotaAddress,
     pub return_address: IotaAddress,
-    pub unix_time: i32,
+    #[diesel(sql_type = diesel::sql_types::BigInt)]
+    pub unix_time: i64,
     pub object_id: IotaAddress,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Queryable, Selectable, Insertable)]
+impl TryFrom<iota_types::stardust::output::basic::BasicOutput> for ExpirationUnlockCondition {
+    type Error = anyhow::Error;
+
+    fn try_from(
+        basic: iota_types::stardust::output::basic::BasicOutput,
+    ) -> Result<Self, Self::Error> {
+        let Some(expiration) = basic.expiration else {
+            anyhow::bail!("expiration unlock condition does not exists");
+        };
+
+        Ok(Self {
+            owner: IotaAddress(expiration.owner),
+            return_address: IotaAddress(expiration.return_address),
+            unix_time: expiration.unix_time as i64,
+            object_id: IotaAddress(iota_types::base_types::IotaAddress::from(
+                *basic.id.object_id(),
+            )),
+        })
+    }
+}
+
+impl TryFrom<iota_types::stardust::output::nft::NftOutput> for ExpirationUnlockCondition {
+    type Error = anyhow::Error;
+
+    fn try_from(nft: iota_types::stardust::output::nft::NftOutput) -> Result<Self, Self::Error> {
+        let Some(expiration) = nft.expiration else {
+            anyhow::bail!("expiration unlock condition does not exists");
+        };
+
+        Ok(Self {
+            owner: IotaAddress(expiration.owner),
+            return_address: IotaAddress(expiration.return_address),
+            unix_time: expiration.unix_time as i64,
+            object_id: IotaAddress(iota_types::base_types::IotaAddress::from(
+                *nft.id.object_id(),
+            )),
+        })
+    }
+}
+
+impl TryFrom<StoredObject> for ExpirationUnlockCondition {
+    type Error = anyhow::Error;
+
+    fn try_from(stored_object: StoredObject) -> Result<Self, Self::Error> {
+        match stored_object.object_type {
+            ObjectType::Basic => Self::try_from(
+                iota_types::stardust::output::basic::BasicOutput::try_from(stored_object)?,
+            ),
+            ObjectType::Nft => Self::try_from(
+                iota_types::stardust::output::nft::NftOutput::try_from(stored_object)?,
+            ),
+        }
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Queryable, Selectable, Insertable, AsChangeset)]
 #[diesel(table_name = crate::schema::objects)]
 #[diesel(check_for_backend(diesel::sqlite::Sqlite))]
 pub struct StoredObject {
@@ -207,6 +263,15 @@ impl FromSql<diesel::sql_types::Integer, diesel::sqlite::Sqlite> for ObjectType 
         let stored = u8::try_from(i32::from_sql(bytes)?)?;
         Ok(Self::try_from(stored)?)
     }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Queryable, Selectable, Insertable, AsChangeset)]
+#[diesel(table_name = crate::schema::last_checkpoint_sync)]
+#[diesel(check_for_backend(diesel::sqlite::Sqlite))]
+pub struct LastCheckpointSync {
+    #[diesel(sql_type = diesel::sql_types::BigInt)]
+    pub sequence_number: i64,
+    pub task_id: String,
 }
 
 #[cfg(test)]

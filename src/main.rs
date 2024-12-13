@@ -3,15 +3,19 @@
 
 use clap::Parser;
 use db::{ConnectionPool, ConnectionPoolConfig};
-use tracing::{Level, error, info};
+use tracing::Level;
 use tracing_subscriber::FmtSubscriber;
 
-use crate::rest::spawn_rest_server;
+use crate::{
+    rest::spawn_rest_server,
+    sync::{Indexer, IndexerConfig},
+};
 
 mod db;
 mod models;
 mod rest;
 mod schema;
+mod sync;
 
 use tokio_util::sync::CancellationToken;
 
@@ -26,41 +30,46 @@ pub struct Config {
     pub log_level: Level,
     #[clap(flatten)]
     pub connection_pool_config: ConnectionPoolConfig,
-    #[arg(long, default_value = "0.0.0.0::3000")]
+    #[arg(long, default_value = "0.0.0.0:3000")]
     #[arg(env = "REST_API_SOCKET_ADDRESS")]
     pub rest_api_socket_address: std::net::SocketAddr,
+    #[clap(flatten)]
+    pub indexer_config: IndexerConfig,
 }
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let opts = Config::parse();
 
-    let subscriber = FmtSubscriber::builder()
-        .with_max_level(opts.log_level)
-        .finish();
+    init_tracing(opts.log_level);
 
-    tracing::subscriber::set_global_default(subscriber).expect("setting default subscriber failed");
+    let connection_pool = ConnectionPool::new(opts.connection_pool_config)?;
+    connection_pool.run_migrations()?;
 
-    // Spawn a task to listen for CTRL+C and send a shutdown signal
+    // Spawn synchronization logic from a Fullnode
+    let indexer_handle = Indexer::init(connection_pool.clone(), opts.indexer_config).await?;
+
     let token = CancellationToken::new();
     let cloned_token = token.clone();
     tokio::spawn(async move {
         tokio::signal::ctrl_c()
             .await
             .expect("failed to listen for CTRL+C");
-        info!("CTRL+C received, shutting down.");
+        tracing::info!("CTRL+C received, shutting down.");
         cloned_token.cancel();
+        indexer_handle.graceful_shutdown().await
     });
-
-    let connection_pool = ConnectionPool::new(opts.connection_pool_config)?;
-    connection_pool.run_migrations()?;
-
-    // TODO: Spawn synchronization logic
 
     // Spawn the REST server
     _ = spawn_rest_server(opts.rest_api_socket_address, connection_pool, token)
         .await
-        .inspect_err(|e| error!("REST server terminated with error: {e}"));
+        .inspect_err(|e| tracing::error!("REST server terminated with error: {e}"));
 
     Ok(())
+}
+
+/// Initialize the tracing with custom subsribers
+fn init_tracing(log_level: Level) {
+    let subscriber = FmtSubscriber::builder().with_max_level(log_level).finish();
+    tracing::subscriber::set_global_default(subscriber).expect("setting default subscriber failed");
 }

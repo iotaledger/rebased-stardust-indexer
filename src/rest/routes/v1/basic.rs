@@ -108,7 +108,7 @@ mod tests {
         // Spawn the REST server
         let cancel_token = CancellationToken::new();
         let bind_port = get_free_port_for_testing_only().unwrap();
-        let join_handle = spawn_rest_server(
+        let handle = spawn_rest_server(
             format!("127.0.0.1:{}", bind_port).parse().unwrap(),
             pool,
             cancel_token.clone(),
@@ -147,7 +147,7 @@ mod tests {
         }
 
         cancel_token.cancel();
-        join_handle.await.unwrap();
+        handle.await.unwrap();
 
         // Clean up the test database
         std::fs::remove_file(test_db).unwrap();
@@ -187,7 +187,7 @@ mod tests {
         // Spawn the REST server
         let cancel_token = CancellationToken::new();
         let bind_port = get_free_port_for_testing_only().unwrap();
-        let join_handle = spawn_rest_server(
+        let handle = spawn_rest_server(
             format!("127.0.0.1:{}", bind_port).parse().unwrap(),
             pool,
             cancel_token.clone(),
@@ -243,7 +243,7 @@ mod tests {
 
         cancel_token.cancel();
 
-        join_handle.await.unwrap();
+        handle.await.unwrap();
 
         // Clean up the test database
         std::fs::remove_file(test_db).unwrap();
@@ -286,7 +286,7 @@ mod tests {
         let unlock_condition = ExpirationUnlockCondition {
             owner: IotaAddress(owner_address.clone()),
             return_address: IotaAddress(owner_address.clone()),
-            unix_time: unix_time as i32,
+            unix_time: unix_time as i64,
             object_id: IotaAddress(basic_object_id.into()),
         };
 
