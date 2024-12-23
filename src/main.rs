@@ -4,7 +4,6 @@
 use std::{fs, path::Path};
 
 use clap::{Parser, Subcommand};
-use tokio::task::JoinHandle;
 use db::{ConnectionPool, ConnectionPoolConfig};
 use tracing::{Level, error, info};
 use tracing_subscriber::FmtSubscriber;
@@ -26,8 +25,8 @@ use tokio_util::sync::CancellationToken;
 /// The main CLI application
 #[derive(Parser, Clone, Debug)]
 #[clap(
-name = "Rebased stardust indexer",
-about = "An application indexing data on migrated stardust outputs, and serving them through a REST API"
+    name = "Rebased stardust indexer",
+    about = "An application indexing data on migrated stardust outputs, and serving them through a REST API"
 )]
 struct Cli {
     #[clap(subcommand)]
@@ -64,9 +63,15 @@ async fn main() -> anyhow::Result<()> {
             log_level,
             connection_pool_config,
             rest_api_address,
-            indexer_config
+            indexer_config,
         } => {
-            run_indexer(log_level, connection_pool_config, rest_api_address, indexer_config).await?;
+            run_indexer(
+                log_level,
+                connection_pool_config,
+                rest_api_address,
+                indexer_config,
+            )
+            .await?;
         }
     }
 
@@ -87,8 +92,10 @@ async fn run_indexer(
     // Spawn synchronization logic from a Fullnode
     let indexer_handle = Indexer::init(connection_pool.clone(), config).await?;
 
+    // Set up a CTRL+C handler for graceful shutdown
+    let token = setup_shutdown_signal(indexer_handle);
+
     // Spawn the REST server
-    let token = setup_shutdown_signal();
     spawn_rest_server(rest_api_address, connection_pool, token)
         .await
         .inspect_err(|e| error!("REST server terminated with error: {e}"))?;
@@ -123,14 +130,14 @@ fn generate_openapi_spec() {
     println!("OpenAPI spec written to '{}'", spec_file.display());
 }
 
-/// Initialize the tracing with custom subsribers
+/// Initialize the tracing with custom subscribers
 fn init_tracing(log_level: Level) {
     let subscriber = FmtSubscriber::builder().with_max_level(log_level).finish();
     tracing::subscriber::set_global_default(subscriber).expect("setting default subscriber failed");
 }
 
-/// Set up a CTRL+C handler to gracefully shut down
-fn setup_shutdown_signal(indexer_handle: JoinHandle<()>) -> CancellationToken {
+/// Set up a CTRL+C handler for graceful shutdown
+fn setup_shutdown_signal(indexer_handle: Indexer) -> CancellationToken {
     let token = CancellationToken::new();
     let cloned_token = token.clone();
 

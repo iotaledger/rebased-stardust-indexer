@@ -37,10 +37,7 @@
             "description": "Page number for pagination",
             "required": false,
             "schema": {
-              "type": [
-                "integer",
-                "null"
-              ],
+              "type": "integer",
               "format": "int32",
               "minimum": 0
             }
@@ -51,10 +48,7 @@
             "description": "Number of items per page for pagination",
             "required": false,
             "schema": {
-              "type": [
-                "integer",
-                "null"
-              ],
+              "type": "integer",
               "format": "int32",
               "minimum": 0
             }
@@ -66,7 +60,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/BasicVec"
+                  "$ref": "#/components/schemas/BasicOutputVec"
                 }
               }
             }
@@ -109,10 +103,7 @@
             "description": "Page number for pagination",
             "required": false,
             "schema": {
-              "type": [
-                "integer",
-                "null"
-              ],
+              "type": "integer",
               "format": "int32",
               "minimum": 0
             }
@@ -123,10 +114,7 @@
             "description": "Number of items per page for pagination",
             "required": false,
             "schema": {
-              "type": [
-                "integer",
-                "null"
-              ],
+              "type": "integer",
               "format": "int32",
               "minimum": 0
             }
@@ -138,7 +126,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/NftVec"
+                  "$ref": "#/components/schemas/NftOutputVec"
                 }
               }
             }
@@ -268,7 +256,7 @@
           }
         }
       },
-      "BasicVec": {
+      "BasicOutputVec": {
         "type": "array",
         "items": {
           "$ref": "#/components/schemas/BasicOutput"
@@ -344,7 +332,7 @@
           }
         }
       },
-      "NftVec": {
+      "NftOutputVec": {
         "type": "array",
         "items": {
           "$ref": "#/components/schemas/NftOutput"
