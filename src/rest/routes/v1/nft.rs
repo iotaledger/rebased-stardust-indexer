@@ -2,18 +2,18 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use axum::{Extension, Router, extract::Query, routing::get};
-use iota_types::stardust::output::nft::NftOutput;
-use serde::Serialize;
 use tracing::error;
 
 use crate::{
-    impl_into_response,
     models::ObjectType,
     rest::{
         State,
         error::ApiError,
         extractors::Path,
-        routes::v1::{PaginationParams, fetch_stored_objects},
+        routes::v1::{
+            PaginationParams, fetch_stored_objects,
+            responses::{NftOutput, NftOutputVec},
+        },
     },
 };
 
@@ -21,44 +21,59 @@ pub(crate) fn router() -> Router {
     Router::new().route("/nft/:address", get(nft))
 }
 
+/// Get the `BasicOutput`s owned by the address
+#[utoipa::path(
+    get,
+    path = "/v1/nft/{address}",
+    responses(
+        (status = 200, description = "Successful request", body = NftOutputVec),
+        (status = 400, description = "Bad request"),
+        (status = 500, description = "Internal server error"),
+        (status = 503, description = "Service unavailable"),
+        (status = 403, description = "Forbidden")
+    ),
+    params(
+        ("address" = String, Path, description = "The hex address to fetch the NFT outputs for"),
+        ("page" = Option<u32>, Query, description = "Page number for pagination"),
+        ("limit" = Option<u32>, Query, description = "Number of items per page for pagination")
+    )
+)]
 async fn nft(
     Path(address): Path<iota_types::base_types::IotaAddress>,
     Query(pagination): Query<PaginationParams>,
     Extension(state): Extension<State>,
-) -> Result<NftResponse, ApiError> {
+) -> Result<NftOutputVec, ApiError> {
     let stored_objects = fetch_stored_objects(address, pagination, state, ObjectType::Nft)?;
 
     let nft_outputs: Vec<NftOutput> = stored_objects
         .into_iter()
-        .map(NftOutput::try_from)
-        .collect::<Result<Vec<_>, _>>()
-        .map_err(|e| {
-            error!("failed to convert stored object to NFT output: {}", e);
-            ApiError::InternalServerError
-        })?;
+        .map(|x| {
+            iota_types::stardust::output::nft::NftOutput::try_from(x)
+                .map(NftOutput::from)
+                .map_err(|e| {
+                    error!("failed to convert stored object to NFT output: {}", e);
+                    ApiError::InternalServerError
+                })
+        })
+        .collect::<Result<Vec<_>, _>>()?;
 
-    Ok(NftResponse(nft_outputs))
+    Ok(NftOutputVec(nft_outputs))
 }
-
-#[derive(Clone, Debug, Serialize)]
-struct NftResponse(Vec<NftOutput>);
-
-impl_into_response!(NftResponse);
 
 #[cfg(test)]
 mod tests {
     use diesel::{RunQueryDsl, insert_into};
-    use iota_types::{
-        balance::Balance, base_types::ObjectID, collection_types::Bag, id::UID,
-        stardust::output::nft::NftOutput,
-    };
+    use iota_types::{balance::Balance, base_types::ObjectID, collection_types::Bag, id::UID};
     use tracing::Level;
     use tracing_subscriber::FmtSubscriber;
 
     use crate::{
         db::{ConnectionPool, PoolConnection},
         models::{ExpirationUnlockCondition, IotaAddress, StoredObject},
-        rest::{routes::v1::get_free_port_for_testing_only, spawn_rest_server},
+        rest::{
+            routes::v1::{get_free_port_for_testing_only, nft::NftOutput},
+            spawn_rest_server,
+        },
         schema::{
             expiration_unlock_conditions::dsl::expiration_unlock_conditions, objects::dsl::*,
         },
@@ -90,7 +105,8 @@ mod tests {
                 100 + i,
                 100 + i as u32,
             )?;
-            inserted_nfts.push(nft_output);
+            let serialized_nft_output = NftOutput::from(nft_output);
+            inserted_nfts.push(serialized_nft_output);
         }
 
         // Insert NFTs for the other address
@@ -143,7 +159,7 @@ mod tests {
         assert_eq!(other_nft_outputs.len(), 5);
 
         for output in other_nft_outputs {
-            assert!(output.balance.value() >= 200); // Validate range for "other_address" NFTs
+            assert!(output.balance.value >= 200); // Validate range for "other_address" NFTs
         }
 
         cancel_token.cancel();
@@ -179,7 +195,8 @@ mod tests {
                 100 + i,
                 100 + i as u32,
             )?;
-            inserted_objects.push(nft_output);
+            let serialized_nft_output = NftOutput::from(nft_output);
+            inserted_objects.push(serialized_nft_output);
         }
 
         drop(connection);
@@ -255,9 +272,9 @@ mod tests {
         owner_address: iota_types::base_types::IotaAddress,
         balance: u64,
         unix_time: u32,
-    ) -> Result<NftOutput, anyhow::Error> {
+    ) -> Result<iota_types::stardust::output::nft::NftOutput, anyhow::Error> {
         let nft_object_id = ObjectID::random();
-        let nft_output = NftOutput {
+        let nft_output = iota_types::stardust::output::nft::NftOutput {
             id: UID::new(nft_object_id),
             balance: Balance::new(balance),
             native_tokens: Bag::default(),

@@ -2,18 +2,18 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use axum::{Extension, Router, extract::Query, routing::get};
-use iota_types::stardust::output::basic::BasicOutput;
-use serde::Serialize;
 use tracing::error;
 
 use crate::{
-    impl_into_response,
     models::ObjectType,
     rest::{
         State,
         error::ApiError,
         extractors::Path,
-        routes::v1::{PaginationParams, fetch_stored_objects},
+        routes::v1::{
+            PaginationParams, fetch_stored_objects,
+            responses::{BasicOutput, BasicOutputVec},
+        },
     },
 };
 
@@ -21,36 +21,49 @@ pub(crate) fn router() -> Router {
     Router::new().route("/basic/:address", get(basic))
 }
 
+/// Get the `BasicOutput`s owned by the address
+#[utoipa::path(
+    get,
+    path = "/v1/basic/{address}",
+    responses(
+        (status = 200, description = "Successful request", body = BasicOutputVec),
+        (status = 400, description = "Bad request"),
+        (status = 500, description = "Internal server error"),
+        (status = 503, description = "Service unavailable"),
+        (status = 403, description = "Forbidden")
+    ),
+    params(
+        ("address" = String, Path, description = "The hex address to fetch the basic outputs for"),
+        ("page" = Option<u32>, Query, description = "Page number for pagination"),
+        ("limit" = Option<u32>, Query, description = "Number of items per page for pagination")
+    )
+)]
 async fn basic(
     Path(address): Path<iota_types::base_types::IotaAddress>,
     Query(pagination): Query<PaginationParams>,
     Extension(state): Extension<State>,
-) -> Result<BasicResponse, ApiError> {
+) -> Result<BasicOutputVec, ApiError> {
     let stored_objects = fetch_stored_objects(address, pagination, state, ObjectType::Basic)?;
 
-    let basic_outputs: Vec<BasicOutput> = stored_objects
+    let basic_outputs = stored_objects
         .into_iter()
-        .map(BasicOutput::try_from)
-        .collect::<Result<Vec<_>, _>>()
-        .map_err(|e| {
-            error!("failed to convert stored object to NFT output: {}", e);
-            ApiError::InternalServerError
-        })?;
+        .map(|x| {
+            iota_types::stardust::output::basic::BasicOutput::try_from(x)
+                .map(BasicOutput::from)
+                .map_err(|e| {
+                    error!("failed to convert stored object to basic output: {}", e);
+                    ApiError::InternalServerError
+                })
+        })
+        .collect::<Result<Vec<_>, _>>()?;
 
-    Ok(BasicResponse(basic_outputs))
+    Ok(BasicOutputVec(basic_outputs))
 }
-
-#[derive(Clone, Debug, Serialize)]
-struct BasicResponse(Vec<BasicOutput>);
-impl_into_response!(BasicResponse);
 
 #[cfg(test)]
 mod tests {
     use diesel::{RunQueryDsl, insert_into};
-    use iota_types::{
-        balance::Balance, base_types::ObjectID, collection_types::Bag, id::UID,
-        stardust::output::basic::BasicOutput,
-    };
+    use iota_types::{balance::Balance, base_types::ObjectID, collection_types::Bag, id::UID};
     use tokio_util::sync::CancellationToken;
     use tracing::Level;
     use tracing_subscriber::FmtSubscriber;
@@ -58,7 +71,10 @@ mod tests {
     use crate::{
         db::{ConnectionPool, PoolConnection},
         models::{ExpirationUnlockCondition, IotaAddress, StoredObject},
-        rest::{routes::v1::get_free_port_for_testing_only, spawn_rest_server},
+        rest::{
+            routes::v1::{basic::BasicOutput, get_free_port_for_testing_only},
+            spawn_rest_server,
+        },
         schema::{
             expiration_unlock_conditions::dsl::expiration_unlock_conditions, objects::dsl::*,
         },
@@ -90,7 +106,8 @@ mod tests {
                 100 + i,
                 100 + i as u32,
             )?;
-            inserted_objects.push(basic_output);
+            let serialized_output = BasicOutput::from(basic_output.clone());
+            inserted_objects.push(serialized_output);
         }
 
         // Insert objects for the other address
@@ -143,7 +160,7 @@ mod tests {
         assert_eq!(other_basic_outputs.len(), 5);
 
         for output in other_basic_outputs {
-            assert!(output.balance.value() >= 200); // Validate range for "other_address" objects
+            assert!(output.balance.value >= 200); // Validate range for "other_address" objects
         }
 
         cancel_token.cancel();
@@ -179,7 +196,8 @@ mod tests {
                 100 + i,
                 100 + i as u32,
             )?;
-            inserted_objects.push(basic_output);
+            let serialized_output = BasicOutput::from(basic_output.clone());
+            inserted_objects.push(serialized_output);
         }
 
         drop(connection);
@@ -256,9 +274,9 @@ mod tests {
         owner_address: iota_types::base_types::IotaAddress,
         balance: u64,
         unix_time: u32,
-    ) -> Result<BasicOutput, anyhow::Error> {
+    ) -> Result<iota_types::stardust::output::basic::BasicOutput, anyhow::Error> {
         let basic_object_id = ObjectID::random();
-        let basic_output = BasicOutput {
+        let basic_output = iota_types::stardust::output::basic::BasicOutput {
             id: UID::new(basic_object_id),
             balance: Balance::new(balance),
             native_tokens: Bag::default(),

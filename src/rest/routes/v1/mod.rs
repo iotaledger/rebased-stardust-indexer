@@ -12,8 +12,8 @@ use crate::{
     schema::{expiration_unlock_conditions::dsl::*, objects::dsl::*},
 };
 
-mod basic;
-mod nft;
+pub(crate) mod basic;
+pub(crate) mod nft;
 
 pub(crate) fn router() -> Router {
     Router::new().nest("/v1", basic::router().merge(nft::router()))
@@ -72,5 +72,133 @@ fn get_free_port_for_testing_only() -> Option<u16> {
             Some(addr.port())
         }
         Err(_) => None,
+    }
+}
+
+pub(crate) mod responses {
+    use serde::{Deserialize, Serialize};
+    use utoipa::ToSchema;
+
+    use crate::impl_into_response;
+
+    #[derive(Clone, Debug, Serialize, ToSchema)]
+    pub(crate) struct BasicOutputVec(pub(crate) Vec<BasicOutput>);
+    impl_into_response!(BasicOutputVec);
+
+    #[derive(Clone, Debug, Serialize, ToSchema)]
+    pub(crate) struct NftOutputVec(pub(crate) Vec<NftOutput>);
+    impl_into_response!(NftOutputVec);
+
+    #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, ToSchema)]
+    pub(crate) struct BasicOutput {
+        pub(crate) id: String,
+        pub(crate) balance: Balance,
+        pub(crate) native_tokens: Bag,
+        pub(crate) storage_deposit_return: Option<StorageDepositReturn>,
+        pub(crate) timelock: Option<Timelock>,
+        pub(crate) expiration: Option<Expiration>,
+        pub(crate) metadata: Option<Vec<u8>>,
+        pub(crate) tag: Option<Vec<u8>>,
+        pub(crate) sender: Option<String>,
+    }
+
+    #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, ToSchema)]
+    pub(crate) struct NftOutput {
+        pub(crate) id: String,
+        pub(crate) balance: Balance,
+        pub(crate) native_tokens: Bag,
+        pub(crate) storage_deposit_return: Option<StorageDepositReturn>,
+        pub(crate) timelock: Option<Timelock>,
+        pub(crate) expiration: Option<Expiration>,
+    }
+
+    #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, ToSchema)]
+    pub(crate) struct Balance {
+        pub(crate) value: u64,
+    }
+
+    #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, ToSchema)]
+    pub(crate) struct Bag {
+        pub(crate) id: String,
+        pub(crate) size: u64,
+    }
+
+    #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, ToSchema)]
+    pub(crate) struct StorageDepositReturn {
+        pub(crate) return_address: String,
+        pub(crate) return_amount: u64,
+    }
+
+    #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, ToSchema)]
+    pub(crate) struct Timelock {
+        pub(crate) unix_time: u64,
+    }
+
+    #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, ToSchema)]
+    pub(crate) struct Expiration {
+        pub(crate) owner: String,
+        pub(crate) return_address: String,
+        pub(crate) unix_time: u64,
+    }
+
+    impl From<iota_types::stardust::output::basic::BasicOutput> for BasicOutput {
+        fn from(output: iota_types::stardust::output::basic::BasicOutput) -> Self {
+            Self {
+                id: output.id.object_id().to_string(),
+                balance: Balance {
+                    value: output.balance.value(),
+                },
+                native_tokens: Bag {
+                    id: output.native_tokens.id.object_id().to_string(),
+                    size: output.native_tokens.size,
+                },
+                storage_deposit_return: output.storage_deposit_return.map(|x| {
+                    StorageDepositReturn {
+                        return_address: x.return_address.to_string(),
+                        return_amount: x.return_amount,
+                    }
+                }),
+                timelock: output.timelock.map(|x| Timelock {
+                    unix_time: x.unix_time as u64,
+                }),
+                expiration: output.expiration.map(|x| Expiration {
+                    owner: x.owner.to_string(),
+                    return_address: x.return_address.to_string(),
+                    unix_time: x.unix_time as u64,
+                }),
+                metadata: output.metadata,
+                tag: output.tag,
+                sender: output.sender.map(|x| x.to_string()),
+            }
+        }
+    }
+
+    impl From<iota_types::stardust::output::nft::NftOutput> for NftOutput {
+        fn from(output: iota_types::stardust::output::nft::NftOutput) -> Self {
+            Self {
+                id: output.id.object_id().to_string(),
+                balance: Balance {
+                    value: output.balance.value(),
+                },
+                native_tokens: Bag {
+                    id: output.native_tokens.id.object_id().to_string(),
+                    size: output.native_tokens.size,
+                },
+                storage_deposit_return: output.storage_deposit_return.map(|x| {
+                    StorageDepositReturn {
+                        return_address: x.return_address.to_string(),
+                        return_amount: x.return_amount,
+                    }
+                }),
+                timelock: output.timelock.map(|x| Timelock {
+                    unix_time: x.unix_time as u64,
+                }),
+                expiration: output.expiration.map(|x| Expiration {
+                    owner: x.owner.to_string(),
+                    return_address: x.return_address.to_string(),
+                    unix_time: x.unix_time as u64,
+                }),
+            }
+        }
     }
 }

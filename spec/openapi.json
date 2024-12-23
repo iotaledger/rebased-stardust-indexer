@@ -1,0 +1,373 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "rebased-stardust-indexer",
+    "description": "",
+    "license": {
+      "name": ""
+    },
+    "version": "0.1.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000"
+    }
+  ],
+  "paths": {
+    "/v1/basic/{address}": {
+      "get": {
+        "tags": [
+          "routes::v1::basic"
+        ],
+        "summary": "Get the `BasicOutput`s owned by the address",
+        "operationId": "basic",
+        "parameters": [
+          {
+            "name": "address",
+            "in": "path",
+            "description": "The hex address to fetch the basic outputs for",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Page number for pagination",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Number of items per page for pagination",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BasicOutputVec"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Internal server error"
+          },
+          "503": {
+            "description": "Service unavailable"
+          }
+        }
+      }
+    },
+    "/v1/nft/{address}": {
+      "get": {
+        "tags": [
+          "routes::v1::nft"
+        ],
+        "summary": "Get the `BasicOutput`s owned by the address",
+        "operationId": "nft",
+        "parameters": [
+          {
+            "name": "address",
+            "in": "path",
+            "description": "The hex address to fetch the NFT outputs for",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Page number for pagination",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Number of items per page for pagination",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NftOutputVec"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Internal server error"
+          },
+          "503": {
+            "description": "Service unavailable"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Bag": {
+        "type": "object",
+        "required": [
+          "id",
+          "size"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "size": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          }
+        }
+      },
+      "Balance": {
+        "type": "object",
+        "required": [
+          "value"
+        ],
+        "properties": {
+          "value": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          }
+        }
+      },
+      "BasicOutput": {
+        "type": "object",
+        "required": [
+          "id",
+          "balance",
+          "native_tokens"
+        ],
+        "properties": {
+          "balance": {
+            "$ref": "#/components/schemas/Balance"
+          },
+          "expiration": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/Expiration"
+              }
+            ]
+          },
+          "id": {
+            "type": "string"
+          },
+          "metadata": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            }
+          },
+          "native_tokens": {
+            "$ref": "#/components/schemas/Bag"
+          },
+          "sender": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "storage_deposit_return": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/StorageDepositReturn"
+              }
+            ]
+          },
+          "tag": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            }
+          },
+          "timelock": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/Timelock"
+              }
+            ]
+          }
+        }
+      },
+      "BasicOutputVec": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/BasicOutput"
+        }
+      },
+      "Expiration": {
+        "type": "object",
+        "required": [
+          "owner",
+          "return_address",
+          "unix_time"
+        ],
+        "properties": {
+          "owner": {
+            "type": "string"
+          },
+          "return_address": {
+            "type": "string"
+          },
+          "unix_time": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          }
+        }
+      },
+      "NftOutput": {
+        "type": "object",
+        "required": [
+          "id",
+          "balance",
+          "native_tokens"
+        ],
+        "properties": {
+          "balance": {
+            "$ref": "#/components/schemas/Balance"
+          },
+          "expiration": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/Expiration"
+              }
+            ]
+          },
+          "id": {
+            "type": "string"
+          },
+          "native_tokens": {
+            "$ref": "#/components/schemas/Bag"
+          },
+          "storage_deposit_return": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/StorageDepositReturn"
+              }
+            ]
+          },
+          "timelock": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/Timelock"
+              }
+            ]
+          }
+        }
+      },
+      "NftOutputVec": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/NftOutput"
+        }
+      },
+      "StorageDepositReturn": {
+        "type": "object",
+        "required": [
+          "return_address",
+          "return_amount"
+        ],
+        "properties": {
+          "return_address": {
+            "type": "string"
+          },
+          "return_amount": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          }
+        }
+      },
+      "Timelock": {
+        "type": "object",
+        "required": [
+          "unix_time"
+        ],
+        "properties": {
+          "unix_time": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          }
+        }
+      }
+    }
+  }
+}
