@@ -25,7 +25,10 @@ where
     async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Self::Rejection> {
         match AxumPath::<T>::from_request_parts(parts, state).await {
             Ok(value) => Ok(Self(value.0)),
-            Err(e) => Err(ApiError::BadRequest(e.to_string())),
+            Err(e) => Err(ApiError::BadRequest(format!(
+                "invalid path parameter provided: {}",
+                e
+            ))),
         }
     }
 }
