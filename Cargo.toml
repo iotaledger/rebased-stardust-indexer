@@ -20,8 +20,8 @@ diesel_migrations = { version = "2.2.0", features = ["sqlite"] }
 # libsqlite3-sys = { version = "0.30", features = ["bundled"] }
 
 dotenvy = "0.15"
-iota-types = { git = "https://github.com/iotaledger/iota.git", tag = "v0.7.2-rc", version = "0.7.2-rc" }
-iota-data-ingestion-core = { git = "https://github.com/iotaledger/iota.git", tag = "v0.7.2-rc", version = "0.7.2-rc" }
+iota-types = { git = "https://github.com/iotaledger/iota.git", tag = "v0.7.3-rc", version = "0.7.3-rc" }
+iota-data-ingestion-core = { git = "https://github.com/iotaledger/iota.git", tag = "v0.7.3-rc", version = "0.7.3-rc" }
 num_enum = "0.7.3"
 prometheus = "0.13.4"
 tempfile = "3.14.0"
@@ -36,7 +36,7 @@ utoipa = "5.2.0"
 utoipa-swagger-ui = { version = "8.0.3", features = ["axum"] }
 
 [dev-dependencies]
-iota-types = { git = "https://github.com/iotaledger/iota.git", tag = "v0.7.2-rc", version = "0.7.2-rc", features = [
+iota-types = { git = "https://github.com/iotaledger/iota.git", tag = "v0.7.3-rc", version = "0.7.3-rc", features = [
     "test-utils",
 ] }
 reqwest = "0.12.9"

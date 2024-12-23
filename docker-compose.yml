@@ -1,0 +1,36 @@
+version: "3.9"
+
+services:
+  rebased-stardust-indexer:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        PROFILE: "release"
+    image: rebased-stardust-indexer:latest
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      LOG_LEVEL: ${LOG_LEVEL}
+      DB_POOL_SIZE: ${DB_POOL_SIZE}
+      DB_CONNECTION_TIMEOUT_SECS: ${DB_CONNECTION_TIMEOUT_SECS}
+      REST_API_SOCKET_ADDRESS: ${REST_API_SOCKET_ADDRESS}
+      REMOTE_STORE_URL: ${REMOTE_STORE_URL}
+      DOWNLOAD_QUEUE_SIZE: ${DOWNLOAD_QUEUE_SIZE}
+      CHECKPOINT_PROCESSING_BATCH_DATA_LIMIT: ${CHECKPOINT_PROCESSING_BATCH_DATA_LIMIT}
+      RESET_DB: ${RESET_DB}
+      PACKAGE_ID: ${PACKAGE_ID}
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./output:/app/output
+    command: >
+      rebased-stardust-indexer
+      start-indexer
+      --log-level ${LOG_LEVEL}
+      --rest-api-address ${REST_API_SOCKET_ADDRESS}
+      --pool-size ${DB_POOL_SIZE}
+      --connection-timeout-secs ${DB_CONNECTION_TIMEOUT_SECS}
+      --download-queue-size ${DOWNLOAD_QUEUE_SIZE}
+      --checkpoint-processing-batch-data-limit ${CHECKPOINT_PROCESSING_BATCH_DATA_LIMIT}
+      --remote-store-url ${REMOTE_STORE_URL}
+      --package-id ${PACKAGE_ID}
