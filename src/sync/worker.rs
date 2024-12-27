@@ -2,6 +2,8 @@
 //! can apply filtering logic to store only the desired data if necessary into a
 //! local or remote storage
 
+use std::sync::{OnceLock, atomic::AtomicUsize};
+
 use axum::async_trait;
 use diesel::{Connection, RunQueryDsl, insert_into};
 use iota_data_ingestion_core::Worker;
@@ -17,6 +19,10 @@ use crate::{
     models::{ExpirationUnlockCondition, StoredObject},
     schema::{expiration_unlock_conditions::dsl::*, objects::dsl::*},
 };
+
+/// The `LATEST_CHECKPOINT_UNIX_TIMESTAMP` is a global variable that stores the
+/// latest checkpoint unix timestamp.
+pub static LATEST_CHECKPOINT_UNIX_TIMESTAMP: OnceLock<AtomicUsize> = OnceLock::new();
 
 /// The `CheckpointWorker` is responsible for processing the incoming
 /// `CheckpointData` from the `IndexerExecutor`, apply filtering logic if
@@ -103,6 +109,15 @@ impl Worker for CheckpointWorker {
                 );
             }
         }
+
+        // Convert checkpoint summary timestamp to usize. Safe for 64-bit systems.
+        #[cfg(target_pointer_width = "32")]
+        compile_error!("This code requires a 64-bit platform to handle timestamps safely.");
+        let checkpoint_timestamp = checkpoint.checkpoint_summary.timestamp_ms as usize;
+
+        LATEST_CHECKPOINT_UNIX_TIMESTAMP
+            .get_or_init(|| AtomicUsize::new(0))
+            .store(checkpoint_timestamp, std::sync::atomic::Ordering::SeqCst);
 
         self.multi_insert_as_database_transactions(stored_objects)?;
 
