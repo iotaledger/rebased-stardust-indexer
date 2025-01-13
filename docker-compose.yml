@@ -6,19 +6,12 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        PROFILE: "release"
+        - GIT_REVISION
+        - BUILD_DATE
+        - PROFILE=release
     image: rebased-stardust-indexer:latest
-    environment:
-      DATABASE_URL: ${DATABASE_URL}
-      LOG_LEVEL: ${LOG_LEVEL}
-      DB_POOL_SIZE: ${DB_POOL_SIZE}
-      DB_CONNECTION_TIMEOUT_SECS: ${DB_CONNECTION_TIMEOUT_SECS}
-      REST_API_SOCKET_ADDRESS: ${REST_API_SOCKET_ADDRESS}
-      REMOTE_STORE_URL: ${REMOTE_STORE_URL}
-      DOWNLOAD_QUEUE_SIZE: ${DOWNLOAD_QUEUE_SIZE}
-      CHECKPOINT_PROCESSING_BATCH_DATA_LIMIT: ${CHECKPOINT_PROCESSING_BATCH_DATA_LIMIT}
-      RESET_DB: ${RESET_DB}
-      PACKAGE_ID: ${PACKAGE_ID}
+    env_file:
+      - .env
     ports:
       - "3000:3000"
     volumes:
