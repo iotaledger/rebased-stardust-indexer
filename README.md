@@ -6,21 +6,6 @@ A simple application indexing custom data from the stardust-migration objects.
 
 ## Docker Setup
 
-To build the Docker image, run:
-```sh
-docker compose build --no-cache
-```
-
-To run the Docker container, run:
-```sh
-docker compose up -d
-```
-
-```markdown
-# Development
-
-## Docker Setup
-
 ### 1. Build the Docker Image
 To build the Docker image (forcing a fresh build without using cached layers), run:
 ```sh
