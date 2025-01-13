@@ -4,7 +4,7 @@
 use std::sync::atomic::Ordering;
 
 use axum::Router;
-use diesel::{JoinOnDsl, prelude::*};
+use diesel::{JoinOnDsl, dsl::sql, prelude::*, sql_types::BigInt};
 use serde::Deserialize;
 use tracing::error;
 
@@ -40,38 +40,38 @@ fn fetch_stored_objects(
     // Calculate the offset
     let offset = (page - 1) * page_size;
 
-    // Latest checkpoint unix timestamp in seconds
-    let checkpoint_unix_timestamp_s = LATEST_CHECKPOINT_UNIX_TIMESTAMP_MS
+    // Latest checkpoint unix timestamp in milliseconds
+    let checkpoint_unix_timestamp_ms = LATEST_CHECKPOINT_UNIX_TIMESTAMP_MS
         .get()
         .ok_or(ApiError::ServiceUnavailable(
             "latest checkpoint not synced yet".to_string(),
         ))?
-        .load(Ordering::SeqCst) as i64
-        / 1000; // Convert to seconds for comparison
+        .load(Ordering::SeqCst) as i64; // Convert to i64 for Diesel
 
-    let stored_objects = objects
-        .inner_join(expiration_unlock_conditions.on(id.eq(object_id)))
-        .select(StoredObject::as_select())
-        .filter(object_type.eq(object_type_filter))
-        .filter(
-            owner
-                .eq(address.to_vec())
-                .and(unix_time.gt(checkpoint_unix_timestamp_s)) // Owner condition before expiration
-                .or(
-                    return_address
-                        .eq(address.to_vec())
-                        .and(unix_time.le(checkpoint_unix_timestamp_ms)), /* Return condition
-                                                                           * after
-                                                                           * expiration */
-                ),
-        )
-        .limit(page_size as i64) // Limit the number of results
-        .offset(offset as i64) // Skip the results for previous pages
-        .load::<StoredObject>(&mut conn)
-        .map_err(|err| {
-            error!("failed to load stored objects: {}", err);
-            ApiError::InternalServerError
-        })?;
+    let stored_objects =
+        objects
+            .inner_join(expiration_unlock_conditions.on(id.eq(object_id)))
+            .select(StoredObject::as_select())
+            .filter(object_type.eq(object_type_filter))
+            .filter(
+                owner
+                    .eq(address.to_vec())
+                    .and(sql::<BigInt>("unix_time * 1000").gt(checkpoint_unix_timestamp_ms)) // Owner condition before expiration
+                    .or(
+                        return_address.eq(address.to_vec()).and(
+                            sql::<BigInt>("unix_time * 1000").le(checkpoint_unix_timestamp_ms),
+                        ), /* Return condition
+                            * after
+                            * expiration */
+                    ),
+            )
+            .limit(page_size as i64) // Limit the number of results
+            .offset(offset as i64) // Skip the results for previous pages
+            .load::<StoredObject>(&mut conn)
+            .map_err(|err| {
+                error!("failed to load stored objects: {}", err);
+                ApiError::InternalServerError
+            })?;
 
     Ok(stored_objects)
 }
