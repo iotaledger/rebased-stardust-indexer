@@ -12,7 +12,7 @@ use crate::{
     models::{ObjectType, StoredObject},
     rest::{State, error::ApiError},
     schema::{expiration_unlock_conditions::dsl::*, objects::dsl::*},
-    sync::LATEST_CHECKPOINT_UNIX_TIMESTAMP,
+    sync::LATEST_CHECKPOINT_UNIX_TIMESTAMP_MS,
 };
 
 pub(crate) mod basic;
@@ -40,11 +40,14 @@ fn fetch_stored_objects(
     // Calculate the offset
     let offset = (page - 1) * page_size;
 
-    // Latest checkpoint unix timestamp
-    let checkpoint_unix_timestamp = LATEST_CHECKPOINT_UNIX_TIMESTAMP
+    // Latest checkpoint unix timestamp in seconds
+    let checkpoint_unix_timestamp_s = LATEST_CHECKPOINT_UNIX_TIMESTAMP_MS
         .get()
-        .expect("latest checkpoint unix timestamp not initialized")
-        .load(Ordering::SeqCst) as i64; // Convert to i64 for Diesel
+        .ok_or(ApiError::ServiceUnavailable(
+            "latest checkpoint not synced yet".to_string(),
+        ))?
+        .load(Ordering::SeqCst) as i64
+        / 1000; // Convert to seconds for comparison
 
     let stored_objects = objects
         .inner_join(expiration_unlock_conditions.on(id.eq(object_id)))
@@ -53,12 +56,13 @@ fn fetch_stored_objects(
         .filter(
             owner
                 .eq(address.to_vec())
-                .and(unix_time.gt(checkpoint_unix_timestamp)) // Owner condition before expiration
+                .and(unix_time.gt(checkpoint_unix_timestamp_s)) // Owner condition before expiration
                 .or(
                     return_address
                         .eq(address.to_vec())
-                        .and(unix_time.le(checkpoint_unix_timestamp)), /* Return condition after
-                                                                        * expiration */
+                        .and(unix_time.le(checkpoint_unix_timestamp_ms)), /* Return condition
+                                                                           * after
+                                                                           * expiration */
                 ),
         )
         .limit(page_size as i64) // Limit the number of results

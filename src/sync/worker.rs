@@ -22,7 +22,7 @@ use crate::{
 
 /// The `LATEST_CHECKPOINT_UNIX_TIMESTAMP` is a global variable that stores the
 /// latest checkpoint unix timestamp.
-pub static LATEST_CHECKPOINT_UNIX_TIMESTAMP: OnceLock<AtomicUsize> = OnceLock::new();
+pub static LATEST_CHECKPOINT_UNIX_TIMESTAMP_MS: OnceLock<AtomicUsize> = OnceLock::new();
 
 /// The `CheckpointWorker` is responsible for processing the incoming
 /// `CheckpointData` from the `IndexerExecutor`, apply filtering logic if
@@ -115,7 +115,7 @@ impl Worker for CheckpointWorker {
         compile_error!("This code requires a 64-bit platform to handle timestamps safely.");
         let checkpoint_timestamp = checkpoint.checkpoint_summary.timestamp_ms as usize;
 
-        LATEST_CHECKPOINT_UNIX_TIMESTAMP
+        LATEST_CHECKPOINT_UNIX_TIMESTAMP_MS
             .get_or_init(|| AtomicUsize::new(0))
             .store(checkpoint_timestamp, std::sync::atomic::Ordering::SeqCst);
 
