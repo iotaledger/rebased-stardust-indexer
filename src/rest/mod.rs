@@ -62,7 +62,7 @@ pub(crate) fn spawn_rest_server(
 
 fn build_app(connection_pool: ConnectionPool) -> Router {
     let cors = CorsLayer::new()
-        .allow_origin("http://127.0.0.1".parse::<HeaderValue>().unwrap())
+        .allow_origin("http://0.0.0.0".parse::<HeaderValue>().unwrap())
         .allow_methods(Method::GET)
         .allow_headers(Any);
 
