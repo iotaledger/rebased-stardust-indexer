@@ -20,8 +20,8 @@ use crate::{
     schema::{expiration_unlock_conditions::dsl::*, objects::dsl::*},
 };
 
-/// The `LATEST_CHECKPOINT_UNIX_TIMESTAMP` is a global variable that stores the
-/// latest checkpoint unix timestamp.
+/// Stores the latest checkpoint unix timestamp in milliseconds processed by the
+/// `CheckpointWorker`.
 pub static LATEST_CHECKPOINT_UNIX_TIMESTAMP_MS: OnceLock<AtomicUsize> = OnceLock::new();
 
 /// The `CheckpointWorker` is responsible for processing the incoming
