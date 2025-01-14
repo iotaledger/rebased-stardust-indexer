@@ -37,8 +37,8 @@ The application uses a pre-existing `.env` file for configuration. You can modif
 - **`REST_API_SOCKET_ADDRESS`**: Address where the REST API will listen (e.g., `0.0.0.0:3000`).
 
 #### Refined Configuration
-- **`DB_CONNECTION_TIMEOUT_SECS`**: Timeout (in seconds) for database connections.
 - **`LOG_LEVEL`**: Logging level (e.g., `INFO`, `DEBUG`).
+- **`DB_CONNECTION_TIMEOUT_SECS`**: Timeout (in seconds) for database connections.
 - **`DB_POOL_SIZE`**: Maximum database connection pool size.
 - **`DOWNLOAD_QUEUE_SIZE`**: Max queue size of checkpoints for the Indexer to process.
 - **`CHECKPOINT_PROCESSING_BATCH_DATA_LIMIT`**: Limit indexing parallelism on big checkpoints to avoid OOM, by limiting the total size of batch checkpoints to ~20MB.
