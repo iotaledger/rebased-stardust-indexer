@@ -27,33 +27,30 @@ fn fetch_stored_objects(
     pagination: PaginationParams,
     state: State,
     object_type_filter: ObjectType,
+    resolve_expiration_uc: bool,
 ) -> Result<Vec<StoredObject>, ApiError> {
     let mut conn = state.connection_pool.get_connection().map_err(|e| {
         error!("failed to get connection: {e}");
         ApiError::ServiceUnavailable(format!("failed to get connection: {}", e))
     })?;
 
-    // Set default values for pagination if not provided
-    let page = pagination.page.unwrap_or(1);
-    let page_size = pagination.page_size.unwrap_or(10);
+    let mut base_query = objects
+        .inner_join(expiration_unlock_conditions.on(id.eq(object_id)))
+        .select(StoredObject::as_select())
+        .filter(object_type.eq(object_type_filter))
+        .into_boxed();
 
-    // Calculate the offset
-    let offset = (page - 1) * page_size;
+    if resolve_expiration_uc {
+        // Latest checkpoint unix timestamp in milliseconds
+        let checkpoint_unix_timestamp_ms = LATEST_CHECKPOINT_UNIX_TIMESTAMP_MS
+            .get()
+            .ok_or(ApiError::ServiceUnavailable(
+                "latest checkpoint not synced yet".to_string(),
+            ))?
+            .load(Ordering::SeqCst) as i64; // Convert to i64 for Diesel
 
-    // Latest checkpoint unix timestamp in milliseconds
-    let checkpoint_unix_timestamp_ms = LATEST_CHECKPOINT_UNIX_TIMESTAMP_MS
-        .get()
-        .ok_or(ApiError::ServiceUnavailable(
-            "latest checkpoint not synced yet".to_string(),
-        ))?
-        .load(Ordering::SeqCst) as i64; // Convert to i64 for Diesel
-
-    let stored_objects =
-        objects
-            .inner_join(expiration_unlock_conditions.on(id.eq(object_id)))
-            .select(StoredObject::as_select())
-            .filter(object_type.eq(object_type_filter))
-            .filter(
+        base_query =
+            base_query.filter(
                 owner
                     .eq(address.to_vec())
                     .and(sql::<BigInt>("unix_time * 1000").gt(checkpoint_unix_timestamp_ms)) // Owner condition before expiration
@@ -64,14 +61,30 @@ fn fetch_stored_objects(
                             * after
                             * expiration */
                     ),
-            )
-            .limit(page_size as i64) // Limit the number of results
-            .offset(offset as i64) // Skip the results for previous pages
-            .load::<StoredObject>(&mut conn)
-            .map_err(|err| {
-                error!("failed to load stored objects: {}", err);
-                ApiError::InternalServerError
-            })?;
+            );
+    } else {
+        base_query = base_query.filter(
+            owner
+                .eq(address.to_vec())
+                .or(return_address.eq(address.to_vec())),
+        );
+    }
+
+    // Set default values for pagination if not provided
+    let page = pagination.page.unwrap_or(1);
+    let page_size = pagination.page_size.unwrap_or(10);
+
+    // Calculate the offset
+    let offset = (page - 1) * page_size;
+
+    let stored_objects = base_query
+        .limit(page_size as i64) // Limit the number of results
+        .offset(offset as i64) // Skip the results for previous pages
+        .load::<StoredObject>(&mut conn)
+        .map_err(|err| {
+            error!("failed to load stored objects: {}", err);
+            ApiError::InternalServerError
+        })?;
 
     Ok(stored_objects)
 }
@@ -220,4 +233,30 @@ pub(crate) mod responses {
             }
         }
     }
+}
+
+#[cfg(test)]
+pub(crate) fn ensure_checkpoint_is_set() {
+    use std::sync::{
+        Once,
+        atomic::{AtomicUsize, Ordering},
+    };
+
+    const DEFAULT_CHECKPOINT_UNIX_TIMESTAMP_MS_FOR_TESTING: usize = 500_000_000;
+
+    static INIT: Once = Once::new();
+    INIT.call_once(|| {
+        if LATEST_CHECKPOINT_UNIX_TIMESTAMP_MS.get().is_none() {
+            LATEST_CHECKPOINT_UNIX_TIMESTAMP_MS
+                .set(AtomicUsize::new(
+                    DEFAULT_CHECKPOINT_UNIX_TIMESTAMP_MS_FOR_TESTING,
+                ))
+                .unwrap();
+        } else {
+            LATEST_CHECKPOINT_UNIX_TIMESTAMP_MS.get().unwrap().store(
+                DEFAULT_CHECKPOINT_UNIX_TIMESTAMP_MS_FOR_TESTING,
+                Ordering::SeqCst,
+            );
+        }
+    });
 }
