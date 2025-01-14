@@ -33,7 +33,7 @@ The application uses a pre-existing `.env` file for configuration. You can modif
 
 #### Basic Configuration
 - **`DATABASE_URL`**: The SQLite database URL.
-- **`REMOTE_STORE_URL`**: The URL of the fullnode REST API to fetch checkpoint data from.
+- **`REMOTE_STORE_URL`**: The fullnode REST API URL used to fetch checkpoint data and synchronize.
 - **`REST_API_SOCKET_ADDRESS`**: Address where the REST API will listen (e.g., `0.0.0.0:3000`).
 
 #### Refined Configuration
