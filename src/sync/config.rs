@@ -10,7 +10,7 @@ const CHECKPOINT_PROCESSING_BATCH_DATA_LIMIT: usize = 20000000;
 
 #[derive(Args, Debug, Clone)]
 pub struct IndexerConfig {
-    /// Option to synchronize data from a remote Fullnode through REST API
+    /// The fullnode REST API URL used to fetch checkpoint data and synchronize
     #[arg(long)]
     pub remote_store_url: Url,
     /// Max queue size of checkpoints for the Indexer to process

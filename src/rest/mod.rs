@@ -3,9 +3,11 @@
 
 use std::net::SocketAddr;
 
-use axum::{Extension, Router, response::IntoResponse};
+use axum::{Extension, Router, http, response::IntoResponse};
+use http::{HeaderValue, Method};
 use tokio::task::JoinHandle;
 use tokio_util::sync::CancellationToken;
+use tower_http::cors::{Any, CorsLayer};
 use tracing::{error, info};
 use utoipa::OpenApi;
 
@@ -24,7 +26,7 @@ mod routes;
         routes::v1::basic::basic,
         routes::v1::nft::nft
     ),
-    servers((url = "http://localhost:3000"))
+    servers((url = "http://127.0.0.1:3000"))
 )]
 pub struct ApiDoc;
 
@@ -59,9 +61,15 @@ pub(crate) fn spawn_rest_server(
 }
 
 fn build_app(connection_pool: ConnectionPool) -> Router {
+    let cors = CorsLayer::new()
+        .allow_origin("http://0.0.0.0".parse::<HeaderValue>().unwrap())
+        .allow_methods(Method::GET)
+        .allow_headers(Any);
+
     Router::new()
         .merge(router_all())
         .layer(Extension(State { connection_pool }))
+        .layer(cors)
         .fallback(fallback)
 }
 
