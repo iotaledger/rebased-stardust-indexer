@@ -1,6 +1,7 @@
 # Indexer of stardust migration objects
 
 A simple application indexing custom data from the stardust-migration objects.
+Please note that a running fullnode instance is required for syncing the data.
 
 # Development
 
@@ -30,13 +31,15 @@ docker compose down
 
 The application uses a pre-existing `.env` file for configuration. You can modify it if needed.
 
-#### Description of Variables
-- **`DATABASE_URL`**: Path or connection string for the database.
+#### Basic Configuration
+- **`DATABASE_URL`**: The SQLite database URL.
+- **`REMOTE_STORE_URL`**: The URL of the fullnode REST API to fetch checkpoint data from.
+- **`REST_API_SOCKET_ADDRESS`**: Address where the REST API will listen (e.g., `0.0.0.0:3000`).
+
+#### Refined Configuration
+- **`DB_CONNECTION_TIMEOUT_SECS`**: Timeout (in seconds) for database connections.
 - **`LOG_LEVEL`**: Logging level (e.g., `INFO`, `DEBUG`).
 - **`DB_POOL_SIZE`**: Maximum database connection pool size.
-- **`DB_CONNECTION_TIMEOUT_SECS`**: Timeout (in seconds) for database connections.
-- **`REST_API_SOCKET_ADDRESS`**: Address where the REST API will listen (e.g., `0.0.0.0:3000`).
-- **`REMOTE_STORE_URL`**: Option to synchronize data from a remote Fullnode through REST API.
 - **`DOWNLOAD_QUEUE_SIZE`**: Max queue size of checkpoints for the Indexer to process.
 - **`CHECKPOINT_PROCESSING_BATCH_DATA_LIMIT`**: Limit indexing parallelism on big checkpoints to avoid OOM, by limiting the total size of batch checkpoints to ~20MB.
 - **`RESET_DB`**: Indicates whether to reset the database on startup (`true` or `false`).
