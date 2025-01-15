@@ -1,7 +1,7 @@
 // Copyright (c) 2024 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-use std::sync::atomic::Ordering;
+use std::sync::atomic::{AtomicU64, Ordering};
 
 use axum::Router;
 use diesel::{JoinOnDsl, dsl::sql, prelude::*, sql_types::BigInt};
@@ -237,18 +237,15 @@ pub(crate) mod responses {
 
 #[cfg(test)]
 pub(crate) fn ensure_checkpoint_is_set() {
-    use std::sync::{
-        Once,
-        atomic::{AtomicUsize, Ordering},
-    };
+    use std::sync::{Once, atomic::Ordering};
 
-    const DEFAULT_CHECKPOINT_UNIX_TIMESTAMP_MS_FOR_TESTING: usize = 500_000_000;
+    const DEFAULT_CHECKPOINT_UNIX_TIMESTAMP_MS_FOR_TESTING: u64 = 500_000_000;
 
     static INIT: Once = Once::new();
     INIT.call_once(|| {
         if LATEST_CHECKPOINT_UNIX_TIMESTAMP_MS.get().is_none() {
             LATEST_CHECKPOINT_UNIX_TIMESTAMP_MS
-                .set(AtomicUsize::new(
+                .set(AtomicU64::new(
                     DEFAULT_CHECKPOINT_UNIX_TIMESTAMP_MS_FOR_TESTING,
                 ))
                 .unwrap();

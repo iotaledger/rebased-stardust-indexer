@@ -2,7 +2,7 @@
 //! can apply filtering logic to store only the desired data if necessary into a
 //! local or remote storage
 
-use std::sync::{OnceLock, atomic::AtomicUsize};
+use std::sync::{OnceLock, atomic::AtomicU64};
 
 use axum::async_trait;
 use diesel::{Connection, RunQueryDsl, insert_into};
@@ -22,7 +22,7 @@ use crate::{
 
 /// Stores the latest checkpoint unix timestamp in milliseconds processed by the
 /// `CheckpointWorker`.
-pub static LATEST_CHECKPOINT_UNIX_TIMESTAMP_MS: OnceLock<AtomicUsize> = OnceLock::new();
+pub static LATEST_CHECKPOINT_UNIX_TIMESTAMP_MS: OnceLock<AtomicU64> = OnceLock::new();
 
 /// The `CheckpointWorker` is responsible for processing the incoming
 /// `CheckpointData` from the `IndexerExecutor`, apply filtering logic if
@@ -110,13 +110,10 @@ impl Worker for CheckpointWorker {
             }
         }
 
-        // Convert checkpoint summary timestamp to usize. Safe for 64-bit systems.
-        #[cfg(target_pointer_width = "32")]
-        compile_error!("This code requires a 64-bit platform to handle timestamps safely.");
-        let checkpoint_timestamp = checkpoint.checkpoint_summary.timestamp_ms as usize;
+        let checkpoint_timestamp = checkpoint.checkpoint_summary.timestamp_ms as u64;
 
         LATEST_CHECKPOINT_UNIX_TIMESTAMP_MS
-            .get_or_init(|| AtomicUsize::new(0))
+            .get_or_init(|| AtomicU64::new(0))
             .store(checkpoint_timestamp, std::sync::atomic::Ordering::SeqCst);
 
         self.multi_insert_as_database_transactions(stored_objects)?;
