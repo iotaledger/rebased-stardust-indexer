@@ -5,7 +5,7 @@ use axum::{Extension, Router, extract::Query, routing::get};
 use tracing::error;
 
 use crate::{
-    models::ObjectType,
+    models::{ObjectType, StoredObject},
     rest::{
         State,
         error::ApiError,
@@ -18,7 +18,9 @@ use crate::{
 };
 
 pub(crate) fn router() -> Router {
-    Router::new().route("/basic/:address", get(basic))
+    Router::new()
+        .route("/basic/:address", get(basic))
+        .route("/basic/resolved/:address", get(resolved))
 }
 
 /// Get the `BasicOutput`s owned by the address
@@ -43,25 +45,59 @@ async fn basic(
     Query(pagination): Query<PaginationParams>,
     Extension(state): Extension<State>,
 ) -> Result<BasicOutputVec, ApiError> {
-    let stored_objects = fetch_stored_objects(address, pagination, state, ObjectType::Basic)?;
+    let stored_objects =
+        fetch_stored_objects(address, pagination, state, ObjectType::Basic, false)?;
+    let basic_outputs = stored_objects_to_basic_outputs(stored_objects)?;
+    Ok(BasicOutputVec(basic_outputs))
+}
 
-    let basic_outputs = stored_objects
+/// Get the `BasicOutput`s owned by the address considering resolved expiration
+/// unlock condition.
+#[utoipa::path(
+    get,
+    path = "/v1/basic/resolved/{address}",
+    responses(
+        (status = 200, description = "Successful request", body = BasicOutputVec),
+        (status = 400, description = "Bad request"),
+        (status = 500, description = "Internal server error"),
+        (status = 503, description = "Service unavailable"),
+        (status = 403, description = "Forbidden")
+    ),
+    params(
+        ("address" = String, Path, description = "The hex address to fetch the basic outputs for"),
+        ("page" = Option<u32>, Query, description = "Page number for pagination"),
+        ("limit" = Option<u32>, Query, description = "Number of items per page for pagination")
+    )
+)]
+async fn resolved(
+    Path(address): Path<iota_types::base_types::IotaAddress>,
+    Query(pagination): Query<PaginationParams>,
+    Extension(state): Extension<State>,
+) -> Result<BasicOutputVec, ApiError> {
+    let stored_objects = fetch_stored_objects(address, pagination, state, ObjectType::Basic, true)?;
+    let basic_outputs = stored_objects_to_basic_outputs(stored_objects)?;
+    Ok(BasicOutputVec(basic_outputs))
+}
+
+fn stored_objects_to_basic_outputs(
+    stored_objects: Vec<StoredObject>,
+) -> Result<Vec<BasicOutput>, ApiError> {
+    stored_objects
         .into_iter()
-        .map(|x| {
-            iota_types::stardust::output::basic::BasicOutput::try_from(x)
+        .map(|stored_object| {
+            iota_types::stardust::output::basic::BasicOutput::try_from(stored_object)
                 .map(BasicOutput::from)
                 .map_err(|e| {
                     error!("failed to convert stored object to basic output: {}", e);
                     ApiError::InternalServerError
                 })
         })
-        .collect::<Result<Vec<_>, _>>()?;
-
-    Ok(BasicOutputVec(basic_outputs))
+        .collect()
 }
 
 #[cfg(test)]
 mod tests {
+
     use diesel::{RunQueryDsl, insert_into};
     use iota_types::{balance::Balance, base_types::ObjectID, collection_types::Bag, id::UID};
     use tokio_util::sync::CancellationToken;
@@ -72,7 +108,9 @@ mod tests {
         db::{ConnectionPool, PoolConnection},
         models::{ExpirationUnlockCondition, IotaAddress, StoredObject},
         rest::{
-            routes::v1::{basic::BasicOutput, get_free_port_for_testing_only},
+            routes::v1::{
+                basic::BasicOutput, ensure_checkpoint_is_set, get_free_port_for_testing_only,
+            },
             spawn_rest_server,
         },
         schema::{
@@ -169,6 +207,85 @@ mod tests {
         // Clean up the test database
         std::fs::remove_file(test_db).unwrap();
 
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn get_basic_objects_by_address_resolved() -> Result<(), anyhow::Error> {
+        ensure_checkpoint_is_set();
+
+        let sub = FmtSubscriber::builder()
+            .with_max_level(Level::INFO)
+            .finish();
+        let _ = tracing::subscriber::set_default(sub);
+
+        let test_db = "stored_basic_object_address_filter_resolved_test.db";
+        let pool = ConnectionPool::new_with_url(test_db, Default::default()).unwrap();
+        pool.run_migrations().unwrap();
+        let mut conn = pool.get_connection().unwrap();
+
+        // two different addresses
+        let owner_addr: iota_types::base_types::IotaAddress = ObjectID::random().into();
+        let return_addr: iota_types::base_types::IotaAddress = ObjectID::random().into();
+
+        // outputs unexpired for owner
+        let mut unexpired = vec![];
+        let big_ts = 999_999_999;
+        for i in 0..3 {
+            let out =
+                create_and_insert_basic_output(&mut conn, owner_addr.clone(), 100 + i, big_ts)?;
+            unexpired.push(BasicOutput::from(out));
+        }
+
+        // outputs expired for return address
+        let mut expired = vec![];
+        let small_ts = 100;
+        for i in 0..2 {
+            let out =
+                create_and_insert_basic_output(&mut conn, return_addr.clone(), 200 + i, small_ts)?;
+            expired.push(BasicOutput::from(out));
+        }
+
+        // irrelevant outputs
+        let third_addr: iota_types::base_types::IotaAddress = ObjectID::random().into();
+        for i in 0..3 {
+            let _ = create_and_insert_basic_output(&mut conn, third_addr.clone(), 300 + i, big_ts)?;
+        }
+
+        drop(conn);
+
+        let cancel_token = tokio_util::sync::CancellationToken::new();
+        let port = get_free_port_for_testing_only().unwrap();
+        let handle = spawn_rest_server(
+            format!("127.0.0.1:{port}").parse().unwrap(),
+            pool,
+            cancel_token.clone(),
+        );
+        tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+
+        // check unexpired
+        let resp = reqwest::get(format!(
+            "http://127.0.0.1:{}/v1/basic/resolved/{}",
+            port, owner_addr
+        ))
+        .await?;
+        let list: Vec<BasicOutput> = resp.json().await?;
+        assert_eq!(list.len(), unexpired.len());
+        assert_eq!(list, unexpired);
+
+        // check expired
+        let resp = reqwest::get(format!(
+            "http://127.0.0.1:{}/v1/basic/resolved/{}",
+            port, return_addr
+        ))
+        .await?;
+        let list: Vec<BasicOutput> = resp.json().await?;
+        assert_eq!(list.len(), expired.len());
+        assert_eq!(list, expired);
+
+        cancel_token.cancel();
+        handle.await.unwrap();
+        std::fs::remove_file(test_db).unwrap();
         Ok(())
     }
 

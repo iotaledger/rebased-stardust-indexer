@@ -1,8 +1,10 @@
 // Copyright (c) 2024 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
+use std::sync::atomic::{AtomicU64, Ordering};
+
 use axum::Router;
-use diesel::{JoinOnDsl, prelude::*};
+use diesel::{JoinOnDsl, dsl::sql, prelude::*, sql_types::BigInt};
 use serde::Deserialize;
 use tracing::error;
 
@@ -10,6 +12,7 @@ use crate::{
     models::{ObjectType, StoredObject},
     rest::{State, error::ApiError},
     schema::{expiration_unlock_conditions::dsl::*, objects::dsl::*},
+    sync::LATEST_CHECKPOINT_UNIX_TIMESTAMP_MS,
 };
 
 pub(crate) mod basic;
@@ -24,11 +27,48 @@ fn fetch_stored_objects(
     pagination: PaginationParams,
     state: State,
     object_type_filter: ObjectType,
+    resolve_expiration_uc: bool,
 ) -> Result<Vec<StoredObject>, ApiError> {
     let mut conn = state.connection_pool.get_connection().map_err(|e| {
         error!("failed to get connection: {e}");
         ApiError::ServiceUnavailable(format!("failed to get connection: {}", e))
     })?;
+
+    let mut base_query = objects
+        .inner_join(expiration_unlock_conditions.on(id.eq(object_id)))
+        .select(StoredObject::as_select())
+        .filter(object_type.eq(object_type_filter))
+        .into_boxed();
+
+    if resolve_expiration_uc {
+        // Latest checkpoint unix timestamp in milliseconds
+        let checkpoint_unix_timestamp_ms = LATEST_CHECKPOINT_UNIX_TIMESTAMP_MS
+            .get()
+            .ok_or(ApiError::ServiceUnavailable(
+                "latest checkpoint not synced yet".to_string(),
+            ))?
+            .load(Ordering::SeqCst) as i64; // Convert to i64 for Diesel
+
+        base_query =
+            base_query.filter(
+                owner
+                    .eq(address.to_vec())
+                    .and(sql::<BigInt>("unix_time * 1000").gt(checkpoint_unix_timestamp_ms)) // Owner condition before expiration
+                    .or(
+                        return_address.eq(address.to_vec()).and(
+                            sql::<BigInt>("unix_time * 1000").le(checkpoint_unix_timestamp_ms),
+                        ), /* Return condition
+                            * after
+                            * expiration */
+                    ),
+            );
+    } else {
+        base_query = base_query.filter(
+            owner
+                .eq(address.to_vec())
+                .or(return_address.eq(address.to_vec())),
+        );
+    }
 
     // Set default values for pagination if not provided
     let page = pagination.page.unwrap_or(1);
@@ -37,15 +77,7 @@ fn fetch_stored_objects(
     // Calculate the offset
     let offset = (page - 1) * page_size;
 
-    let stored_objects = objects
-        .inner_join(expiration_unlock_conditions.on(id.eq(object_id)))
-        .select(StoredObject::as_select())
-        .filter(
-            owner
-                .eq(address.to_vec())
-                .or(return_address.eq(address.to_vec())),
-        )
-        .filter(object_type.eq(object_type_filter))
+    let stored_objects = base_query
         .limit(page_size as i64) // Limit the number of results
         .offset(offset as i64) // Skip the results for previous pages
         .load::<StoredObject>(&mut conn)
@@ -201,4 +233,27 @@ pub(crate) mod responses {
             }
         }
     }
+}
+
+#[cfg(test)]
+pub(crate) fn ensure_checkpoint_is_set() {
+    use std::sync::{Once, atomic::Ordering};
+
+    const DEFAULT_CHECKPOINT_UNIX_TIMESTAMP_MS_FOR_TESTING: u64 = 500_000_000;
+
+    static INIT: Once = Once::new();
+    INIT.call_once(|| {
+        if LATEST_CHECKPOINT_UNIX_TIMESTAMP_MS.get().is_none() {
+            LATEST_CHECKPOINT_UNIX_TIMESTAMP_MS
+                .set(AtomicU64::new(
+                    DEFAULT_CHECKPOINT_UNIX_TIMESTAMP_MS_FOR_TESTING,
+                ))
+                .unwrap();
+        } else {
+            LATEST_CHECKPOINT_UNIX_TIMESTAMP_MS.get().unwrap().store(
+                DEFAULT_CHECKPOINT_UNIX_TIMESTAMP_MS_FOR_TESTING,
+                Ordering::SeqCst,
+            );
+        }
+    });
 }

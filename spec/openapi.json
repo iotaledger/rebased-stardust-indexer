@@ -14,6 +14,72 @@
     }
   ],
   "paths": {
+    "/v1/basic/resolved/{address}": {
+      "get": {
+        "tags": [
+          "routes::v1::basic"
+        ],
+        "summary": "Get the `BasicOutput`s owned by the address considering resolved expiration\nunlock condition.",
+        "operationId": "resolved",
+        "parameters": [
+          {
+            "name": "address",
+            "in": "path",
+            "description": "The hex address to fetch the basic outputs for",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Page number for pagination",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Number of items per page for pagination",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BasicOutputVec"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Internal server error"
+          },
+          "503": {
+            "description": "Service unavailable"
+          }
+        }
+      }
+    },
     "/v1/basic/{address}": {
       "get": {
         "tags": [
@@ -61,6 +127,72 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/BasicOutputVec"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Internal server error"
+          },
+          "503": {
+            "description": "Service unavailable"
+          }
+        }
+      }
+    },
+    "/v1/nft/resolved/{address}": {
+      "get": {
+        "tags": [
+          "routes::v1::nft"
+        ],
+        "summary": "Get the `NftOutput`s owned by the address considering resolved expiration\nunlock condition.",
+        "operationId": "resolved",
+        "parameters": [
+          {
+            "name": "address",
+            "in": "path",
+            "description": "The hex address to fetch the NFT outputs for",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Page number for pagination",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Number of items per page for pagination",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NftOutputVec"
                 }
               }
             }

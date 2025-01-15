@@ -24,7 +24,9 @@ mod routes;
 #[openapi(
     paths(
         routes::v1::basic::basic,
-        routes::v1::nft::nft
+        routes::v1::basic::resolved,
+        routes::v1::nft::nft,
+        routes::v1::nft::resolved
     ),
     servers((url = "http://127.0.0.1:3000"))
 )]
