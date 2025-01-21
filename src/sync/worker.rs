@@ -10,8 +10,7 @@ use iota_data_ingestion_core::Worker;
 use iota_types::{
     base_types::ObjectID,
     full_checkpoint_content::{CheckpointData, CheckpointTransaction},
-    object::Object,
-    transaction::TransactionDataAPI,
+    transaction::{InputObjectKind, TransactionDataAPI},
 };
 
 use crate::{
@@ -39,23 +38,32 @@ impl CheckpointWorker {
         Self { pool, package_id }
     }
 
-    /// Check if the provided `Object` does belong to the package id
-    fn object_belongs_to_package(&self, obj: &Object) -> bool {
-        obj.is_package() && (obj.id() == self.package_id)
+    /// Check if the provided package_id matches the desired one
+    fn package_id_matches(&self, input_obj_kind: &InputObjectKind) -> bool {
+        matches!(input_obj_kind, InputObjectKind::MovePackage(package_id) if *package_id == self.package_id)
     }
 
     /// Check if the `CheckpointTransaction` is a genesis transaction or
     /// contains input objects belonging to the package ID.
-    fn tx_contains_relevant_objects(&self, checkpoint_tx: &CheckpointTransaction) -> bool {
-        checkpoint_tx
+    fn tx_contains_relevant_objects(
+        &self,
+        checkpoint_tx: &CheckpointTransaction,
+    ) -> anyhow::Result<bool> {
+        let is_geneis_tx = checkpoint_tx
             .transaction
             .intent_message()
             .value
-            .is_genesis_tx()
-            || checkpoint_tx
-                .input_objects
-                .iter()
-                .any(|obj| self.object_belongs_to_package(obj))
+            .is_genesis_tx();
+
+        let package_id_matches = checkpoint_tx
+            .transaction
+            .intent_message()
+            .value
+            .input_objects()?
+            .iter()
+            .any(|input_obj_kind| self.package_id_matches(input_obj_kind));
+
+        Ok(is_geneis_tx || package_id_matches)
     }
 
     /// This function iterates over `StoredObject` and
@@ -99,7 +107,7 @@ impl Worker for CheckpointWorker {
     async fn process_checkpoint(&self, checkpoint: CheckpointData) -> anyhow::Result<()> {
         let mut stored_objects = Vec::new();
         for checkpoint_tx in checkpoint.transactions.into_iter() {
-            if self.tx_contains_relevant_objects(&checkpoint_tx) {
+            if self.tx_contains_relevant_objects(&checkpoint_tx)? {
                 stored_objects.extend(
                     checkpoint_tx
                         .output_objects
