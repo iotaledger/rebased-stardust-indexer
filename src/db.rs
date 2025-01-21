@@ -33,6 +33,7 @@ fn parse_duration(arg: &str) -> Result<std::time::Duration, std::num::ParseIntEr
     Ok(std::time::Duration::from_secs(seconds))
 }
 
+#[allow(dead_code)]
 impl ConnectionPoolConfig {
     const DEFAULT_POOL_SIZE: u32 = 20;
     const DEFAULT_CONNECTION_TIMEOUT_SECS: u64 = 30;
