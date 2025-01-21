@@ -49,7 +49,7 @@ impl CheckpointWorker {
         &self,
         checkpoint_tx: &CheckpointTransaction,
     ) -> anyhow::Result<bool> {
-        let is_geneis_tx = checkpoint_tx
+        let is_genesis_tx = checkpoint_tx
             .transaction
             .intent_message()
             .value
