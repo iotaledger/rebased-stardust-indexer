@@ -49,21 +49,13 @@ impl CheckpointWorker {
         &self,
         checkpoint_tx: &CheckpointTransaction,
     ) -> anyhow::Result<bool> {
-        let is_genesis_tx = checkpoint_tx
-            .transaction
-            .intent_message()
-            .value
-            .is_genesis_tx();
+        let tx_data = &checkpoint_tx.transaction.intent_message().value;
 
-        let package_id_matches = checkpoint_tx
-            .transaction
-            .intent_message()
-            .value
-            .input_objects()?
-            .iter()
-            .any(|input_obj_kind| self.package_id_matches(input_obj_kind));
-
-        Ok(is_geneis_tx || package_id_matches)
+        Ok(tx_data.is_genesis_tx()
+            || tx_data
+                .input_objects()?
+                .iter()
+                .any(|input_obj_kind| self.package_id_matches(input_obj_kind)))
     }
 
     /// This function iterates over `StoredObject` and
