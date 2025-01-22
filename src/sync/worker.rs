@@ -116,7 +116,9 @@ impl Worker for CheckpointWorker {
             .get_or_init(|| AtomicU64::new(0))
             .store(checkpoint_timestamp, std::sync::atomic::Ordering::SeqCst);
 
-        self.multi_insert_as_database_transactions(stored_objects)?;
+        if !stored_objects.is_empty() {
+            self.multi_insert_as_database_transactions(stored_objects)?;
+        }
 
         Ok(())
     }
