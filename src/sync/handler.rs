@@ -33,7 +33,7 @@ impl Indexer {
     pub async fn init(
         pool: ConnectionPool,
         pool_progress_store: ProgressStorePool,
-        indexer_config: IndexerConfig,
+        indexer_config: Box<IndexerConfig>,
     ) -> Result<Self, anyhow::Error> {
         // Notify the IndexerExecutor to gracefully shutdown
         // NOTE: this will be replaced by a CancellationToken once this issue will be

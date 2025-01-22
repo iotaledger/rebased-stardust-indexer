@@ -73,7 +73,7 @@ impl GenericConnectionPool {
     pub fn new(pool_config: ConnectionPoolConfig, db_url_env_var: &str) -> Result<Self> {
         dotenv().ok();
         let database_url =
-            env::var(db_url_env_var).expect(&format!("{db_url_env_var} must be set"));
+            env::var(db_url_env_var).unwrap_or_else(|_| panic!("{db_url_env_var} must be set"));
         Self::new_with_url(&database_url, pool_config)
     }
 

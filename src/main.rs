@@ -47,7 +47,7 @@ enum Command {
         #[clap(long, default_value = "0.0.0.0:3000", env = "REST_API_SOCKET_ADDRESS")]
         rest_api_address: std::net::SocketAddr,
         #[clap(flatten)]
-        indexer_config: IndexerConfig,
+        indexer_config: Box<IndexerConfig>,
     },
 }
 
@@ -82,7 +82,7 @@ async fn run_indexer(
     log_level: Level,
     connection_pool_config: ConnectionPoolConfig,
     rest_api_address: std::net::SocketAddr,
-    config: IndexerConfig,
+    config: Box<IndexerConfig>,
 ) -> anyhow::Result<()> {
     init_tracing(log_level);
 
