@@ -14,8 +14,8 @@ use diesel::{
 use diesel_migrations::{EmbeddedMigrations, MigrationHarness, embed_migrations};
 use dotenvy::dotenv;
 
-pub const DEFAULT_DB_MIGRATIONS: EmbeddedMigrations =
-    embed_migrations!("migrations/default_db_migrations");
+pub const OBJECTS_MIGRATIONS: EmbeddedMigrations =
+    embed_migrations!("migrations/objects_migrations");
 pub const PROGRESS_STORE_MIGRATIONS: EmbeddedMigrations =
     embed_migrations!("migrations/progress_store_migrations");
 
@@ -138,7 +138,7 @@ impl ConnectionPool {
     ///
     /// Resolves the database URL from the environment.
     pub fn new(pool_config: ConnectionPoolConfig) -> Result<Self> {
-        GenericConnectionPool::new(pool_config, "DATABASE_URL").map(Self)
+        GenericConnectionPool::new(pool_config, "OBJECTS_DB_URL").map(Self)
     }
 
     /// Build a new pool of connections to the given URL.
@@ -155,12 +155,12 @@ impl ConnectionPool {
 
     /// Run pending migrations.
     pub fn run_migrations(&self) -> Result<()> {
-        run_migrations(&mut self.get_connection()?, DEFAULT_DB_MIGRATIONS)
+        run_migrations(&mut self.get_connection()?, OBJECTS_MIGRATIONS)
     }
 
     /// Revert all applied migrations
     pub fn revert_all_migrations(&self) -> Result<()> {
-        revert_all_migrations(&mut self.get_connection()?, DEFAULT_DB_MIGRATIONS)
+        revert_all_migrations(&mut self.get_connection()?, OBJECTS_MIGRATIONS)
     }
 }
 
