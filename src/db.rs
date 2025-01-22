@@ -14,9 +14,13 @@ use diesel::{
 use diesel_migrations::{EmbeddedMigrations, MigrationHarness, embed_migrations};
 use dotenvy::dotenv;
 
-pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("migrations/");
+pub const DEFAULT_DB_MIGRATIONS: EmbeddedMigrations =
+    embed_migrations!("migrations/default_db_migrations");
+pub const PROGRESS_STORE_MIGRATIONS: EmbeddedMigrations =
+    embed_migrations!("migrations/progress_store_migrations");
 
 pub type PoolConnection = PooledConnection<ConnectionManager<SqliteConnection>>;
+pub type ProgressStorePoolConnection = PooledConnection<ConnectionManager<SqliteConnection>>;
 
 #[derive(Args, Debug, Clone)]
 pub struct ConnectionPoolConfig {
@@ -60,15 +64,16 @@ impl Default for ConnectionPoolConfig {
 ///
 /// Uses [`Arc`][`std::sync::Arc`] internally.
 #[derive(Debug, Clone)]
-pub struct ConnectionPool(Pool<ConnectionManager<SqliteConnection>>);
+pub struct GenericConnectionPool(Pool<ConnectionManager<SqliteConnection>>);
 
-impl ConnectionPool {
+impl GenericConnectionPool {
     /// Build a new pool of connections.
     ///
     /// Resolves the database URL from the environment.
-    pub fn new(pool_config: ConnectionPoolConfig) -> Result<Self> {
+    pub fn new(pool_config: ConnectionPoolConfig, db_url_env_var: &str) -> Result<Self> {
         dotenv().ok();
-        let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+        let database_url =
+            env::var(db_url_env_var).expect(&format!("{db_url_env_var} must be set"));
         Self::new_with_url(&database_url, pool_config)
     }
 
@@ -88,39 +93,101 @@ impl ConnectionPool {
     }
 
     /// Get a connection from the pool.
-    pub fn get_connection(&self) -> Result<PoolConnection> {
-        self.0.get().map_err(|e| {
-            anyhow!("failed to get connection from PG connection pool with error: {e:?}",)
-        })
-    }
-
-    /// Run pending migrations.
-    pub fn run_migrations(&self) -> Result<()> {
-        run_migrations(&mut self.get_connection()?)
-    }
-
-    /// Revert all applied migrations
-    pub fn revert_all_migrations(&self) -> Result<()> {
-        revert_all_migrations(&mut self.get_connection()?)
+    pub fn get_connection(&self) -> Result<PooledConnection<ConnectionManager<SqliteConnection>>> {
+        self.0
+            .get()
+            .map_err(|e| anyhow!("failed to get connection from connection pool with error: {e:?}"))
     }
 }
 
-/// Run any pending migrations to the connected database.
-pub fn run_migrations(connection: &mut impl MigrationHarness<Sqlite>) -> Result<()> {
+/// Run any pending migrations.
+pub fn run_migrations(
+    connection: &mut impl MigrationHarness<Sqlite>,
+    migrations: EmbeddedMigrations,
+) -> Result<()> {
     connection
-        .run_pending_migrations(MIGRATIONS)
+        .run_pending_migrations(migrations)
         .map_err(|e| anyhow!("failed to run migrations {e}"))?;
 
     Ok(())
 }
 
-/// Revert all applied migrations to the connected database
-pub fn revert_all_migrations(connection: &mut impl MigrationHarness<Sqlite>) -> Result<()> {
+/// Revert all applied migrations.
+pub fn revert_all_migrations(
+    connection: &mut impl MigrationHarness<Sqlite>,
+    migrations: EmbeddedMigrations,
+) -> Result<()> {
     connection
-        .revert_all_migrations(MIGRATIONS)
+        .revert_all_migrations(migrations)
         .map_err(|e| anyhow!("failed to revert all migrations {e}"))?;
 
     Ok(())
+}
+
+/// Create a new instance of `ConnectionPool`.
+#[derive(Debug, Clone)]
+pub struct ConnectionPool(GenericConnectionPool);
+
+/// Create a new instance of `ProgressStorePool`.
+#[derive(Debug, Clone)]
+pub struct ProgressStorePool(GenericConnectionPool);
+
+#[allow(dead_code)]
+impl ConnectionPool {
+    /// Build a new pool of connections.
+    ///
+    /// Resolves the database URL from the environment.
+    pub fn new(pool_config: ConnectionPoolConfig) -> Result<Self> {
+        GenericConnectionPool::new(pool_config, "DATABASE_URL").map(Self)
+    }
+
+    /// Build a new pool of connections to the given URL.
+    pub fn new_with_url(db_url: &str, pool_config: ConnectionPoolConfig) -> Result<Self> {
+        GenericConnectionPool::new_with_url(db_url, pool_config).map(Self)
+    }
+
+    /// Get a connection from the pool.
+    pub fn get_connection(&self) -> Result<PoolConnection> {
+        self.0
+            .get_connection()
+            .map_err(|e| anyhow!("failed to get connection from connection pool with error: {e:?}"))
+    }
+
+    /// Run pending migrations.
+    pub fn run_migrations(&self) -> Result<()> {
+        run_migrations(&mut self.get_connection()?, DEFAULT_DB_MIGRATIONS)
+    }
+
+    /// Revert all applied migrations
+    pub fn revert_all_migrations(&self) -> Result<()> {
+        revert_all_migrations(&mut self.get_connection()?, DEFAULT_DB_MIGRATIONS)
+    }
+}
+
+impl ProgressStorePool {
+    /// Build a new pool of connections.
+    ///
+    /// Resolves the database URL from the environment.
+    pub fn new(pool_config: ConnectionPoolConfig) -> Result<Self> {
+        GenericConnectionPool::new(pool_config, "PROGRESS_STORE_DB_URL").map(Self)
+    }
+
+    /// Get a connection from the pool.
+    pub fn get_connection(&self) -> Result<ProgressStorePoolConnection> {
+        self.0
+            .get_connection()
+            .map_err(|e| anyhow!("failed to get connection from connection pool with error: {e:?}"))
+    }
+
+    /// Run pending migrations.
+    pub fn run_migrations(&self) -> Result<()> {
+        run_migrations(&mut self.get_connection()?, PROGRESS_STORE_MIGRATIONS)
+    }
+
+    /// Revert all applied migrations
+    pub fn revert_all_migrations(&self) -> Result<()> {
+        revert_all_migrations(&mut self.get_connection()?, PROGRESS_STORE_MIGRATIONS)
+    }
 }
 
 #[cfg(test)]

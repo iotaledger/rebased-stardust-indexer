@@ -110,7 +110,7 @@ impl Worker for CheckpointWorker {
             }
         }
 
-        let checkpoint_timestamp = checkpoint.checkpoint_summary.timestamp_ms as u64;
+        let checkpoint_timestamp = checkpoint.checkpoint_summary.timestamp_ms;
 
         LATEST_CHECKPOINT_UNIX_TIMESTAMP_MS
             .get_or_init(|| AtomicU64::new(0))

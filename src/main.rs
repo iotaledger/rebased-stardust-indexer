@@ -4,7 +4,7 @@
 use std::{fs, path::Path};
 
 use clap::{Parser, Subcommand};
-use db::{ConnectionPool, ConnectionPoolConfig};
+use db::{ConnectionPool, ConnectionPoolConfig, ProgressStorePool};
 use tracing::{Level, error, info};
 use tracing_subscriber::FmtSubscriber;
 use utoipa::OpenApi;
@@ -86,11 +86,19 @@ async fn run_indexer(
 ) -> anyhow::Result<()> {
     init_tracing(log_level);
 
-    let connection_pool = ConnectionPool::new(connection_pool_config)?;
+    let connection_pool = ConnectionPool::new(connection_pool_config.clone())?;
+    let progress_store_pool = ProgressStorePool::new(connection_pool_config)?;
+
+    if config.reset_db {
+        reset_database(&connection_pool, &progress_store_pool)?;
+    }
+
     connection_pool.run_migrations()?;
+    progress_store_pool.run_migrations()?;
 
     // Spawn synchronization logic from a Fullnode
-    let indexer_handle = Indexer::init(connection_pool.clone(), config).await?;
+    let indexer_handle =
+        Indexer::init(connection_pool.clone(), progress_store_pool, config).await?;
 
     // Set up a CTRL+C handler for graceful shutdown
     let token = setup_shutdown_signal(indexer_handle);
@@ -103,6 +111,15 @@ async fn run_indexer(
     Ok(())
 }
 
+/// Reset the database by reverting all migrations
+fn reset_database(
+    connection_pool: &ConnectionPool,
+    progress_store_pool: &ProgressStorePool,
+) -> anyhow::Result<()> {
+    connection_pool.revert_all_migrations()?;
+    progress_store_pool.revert_all_migrations()
+}
+
 /// Generate and save the OpenAPI specification
 fn generate_openapi_spec() {
     let spec_json = ApiDoc::openapi()
@@ -113,7 +130,7 @@ fn generate_openapi_spec() {
     let spec_dir = Path::new("spec");
     let spec_file = spec_dir.join("openapi.json");
 
-    if let Err(e) = fs::create_dir_all(&spec_dir) {
+    if let Err(e) = fs::create_dir_all(spec_dir) {
         eprintln!("Failed to create directory '{}': {}", spec_dir.display(), e);
         std::process::exit(1);
     }

@@ -279,7 +279,10 @@ mod tests {
     use diesel::insert_into;
 
     use super::*;
-    use crate::{db::run_migrations, schema::objects::dsl::*};
+    use crate::{
+        db::{DEFAULT_DB_MIGRATIONS, run_migrations},
+        schema::objects::dsl::*,
+    };
 
     #[test]
     fn stored_object_round_trip() {
@@ -289,7 +292,7 @@ mod tests {
         ];
         let test_db = "stored_object_round_trip.db";
         let mut connection = SqliteConnection::establish(test_db).unwrap();
-        run_migrations(&mut connection).unwrap();
+        run_migrations(&mut connection, DEFAULT_DB_MIGRATIONS).unwrap();
 
         let rows_inserted = insert_into(objects)
             .values(&data)
