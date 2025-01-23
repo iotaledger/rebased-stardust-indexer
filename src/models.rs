@@ -280,7 +280,7 @@ mod tests {
 
     use super::*;
     use crate::{
-        db::{OBJECTS_MIGRATIONS, run_migrations},
+        db::{STARDUST_MIGRATIONS, run_migrations},
         schema::objects::dsl::*,
     };
 
@@ -292,7 +292,7 @@ mod tests {
         ];
         let test_db = "stored_object_round_trip.db";
         let mut connection = SqliteConnection::establish(test_db).unwrap();
-        run_migrations(&mut connection, OBJECTS_MIGRATIONS).unwrap();
+        run_migrations(&mut connection, STARDUST_MIGRATIONS).unwrap();
 
         let rows_inserted = insert_into(objects)
             .values(&data)

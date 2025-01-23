@@ -8,19 +8,17 @@ use diesel::prelude::*;
 use iota_data_ingestion_core::ProgressStore;
 use iota_types::messages_checkpoint::CheckpointSequenceNumber;
 
-use crate::{
-    db::ProgressStorePool, models::LastCheckpointSync, schema::last_checkpoint_sync::dsl::*,
-};
+use crate::{db::ConnectionPool, models::LastCheckpointSync, schema::last_checkpoint_sync::dsl::*};
 
 /// Record in `SQLite` the latest synced checkpoint, this will allow the Indexer
 /// to resume syncing checkpoints from last registered one instead of starting
 /// from the checkpoint with sequence number `0`
 pub struct SqliteProgressStore {
-    pool: ProgressStorePool,
+    pool: ConnectionPool,
 }
 
 impl SqliteProgressStore {
-    pub fn new(pool: ProgressStorePool) -> Self {
+    pub fn new(pool: ConnectionPool) -> Self {
         Self { pool }
     }
 }

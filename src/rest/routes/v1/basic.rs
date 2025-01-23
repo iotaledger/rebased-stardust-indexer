@@ -105,7 +105,7 @@ mod tests {
     use tracing_subscriber::FmtSubscriber;
 
     use crate::{
-        db::{ConnectionPool, PoolConnection},
+        db::{ConnectionPool, Name, PoolConnection},
         models::{ExpirationUnlockCondition, IotaAddress, StoredObject},
         rest::{
             routes::v1::{
@@ -127,7 +127,8 @@ mod tests {
         let _ = tracing::subscriber::set_default(subscriber);
 
         let test_db = "stored_basic_object_address_filter_test.db";
-        let pool = ConnectionPool::new_with_url(test_db, Default::default()).unwrap();
+        let pool =
+            ConnectionPool::new_with_url(test_db, Default::default(), Name::Objects).unwrap();
         pool.run_migrations().unwrap();
         let mut connection = pool.get_connection().unwrap();
 
@@ -220,7 +221,8 @@ mod tests {
         let _ = tracing::subscriber::set_default(sub);
 
         let test_db = "stored_basic_object_address_filter_resolved_test.db";
-        let pool = ConnectionPool::new_with_url(test_db, Default::default()).unwrap();
+        let pool =
+            ConnectionPool::new_with_url(test_db, Default::default(), Name::Objects).unwrap();
         pool.run_migrations().unwrap();
         let mut conn = pool.get_connection().unwrap();
 
@@ -298,7 +300,8 @@ mod tests {
         let _ = tracing::subscriber::set_default(subscriber);
 
         let test_db = "stored_pagination_test.db";
-        let pool = ConnectionPool::new_with_url(test_db, Default::default()).unwrap();
+        let pool =
+            ConnectionPool::new_with_url(test_db, Default::default(), Name::Objects).unwrap();
         pool.run_migrations().unwrap();
         let mut connection = pool.get_connection().unwrap();
 

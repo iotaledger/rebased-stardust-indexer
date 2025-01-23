@@ -4,7 +4,7 @@
 use std::{fs, path::Path};
 
 use clap::{Parser, Subcommand};
-use db::{ConnectionPool, ConnectionPoolConfig, ProgressStorePool};
+use db::{ConnectionPool, ConnectionPoolConfig, Name};
 use tracing::{Level, error, info};
 use tracing_subscriber::FmtSubscriber;
 use utoipa::OpenApi;
@@ -86,8 +86,8 @@ async fn run_indexer(
 ) -> anyhow::Result<()> {
     init_tracing(log_level);
 
-    let connection_pool = ConnectionPool::new(connection_pool_config.clone())?;
-    let progress_store_pool = ProgressStorePool::new(connection_pool_config)?;
+    let connection_pool = ConnectionPool::new(connection_pool_config.clone(), Name::Objects)?;
+    let progress_store_pool = ConnectionPool::new(connection_pool_config, Name::ProgressStore)?;
 
     if config.reset_db {
         reset_database(&connection_pool, &progress_store_pool)?;
@@ -114,7 +114,7 @@ async fn run_indexer(
 /// Reset the database by reverting all migrations
 fn reset_database(
     connection_pool: &ConnectionPool,
-    progress_store_pool: &ProgressStorePool,
+    progress_store_pool: &ConnectionPool,
 ) -> anyhow::Result<()> {
     connection_pool.revert_all_migrations()?;
     progress_store_pool.revert_all_migrations()

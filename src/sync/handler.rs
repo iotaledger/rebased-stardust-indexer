@@ -8,7 +8,7 @@ use prometheus::Registry;
 use tokio::{sync::oneshot, task::JoinHandle};
 
 use crate::{
-    db::{ConnectionPool, ProgressStorePool},
+    db::ConnectionPool,
     sync::{IndexerConfig, progress_store::SqliteProgressStore, worker::CheckpointWorker},
 };
 
@@ -32,7 +32,7 @@ impl Indexer {
     /// Init the Checkpoint synchronization from a Fullnode
     pub async fn init(
         pool: ConnectionPool,
-        pool_progress_store: ProgressStorePool,
+        pool_progress_store: ConnectionPool,
         indexer_config: Box<IndexerConfig>,
     ) -> Result<Self, anyhow::Error> {
         // Notify the IndexerExecutor to gracefully shutdown
