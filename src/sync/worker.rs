@@ -110,13 +110,15 @@ impl Worker for CheckpointWorker {
             }
         }
 
-        let checkpoint_timestamp = checkpoint.checkpoint_summary.timestamp_ms as u64;
+        let checkpoint_timestamp = checkpoint.checkpoint_summary.timestamp_ms;
 
         LATEST_CHECKPOINT_UNIX_TIMESTAMP_MS
             .get_or_init(|| AtomicU64::new(0))
             .store(checkpoint_timestamp, std::sync::atomic::Ordering::SeqCst);
 
-        self.multi_insert_as_database_transactions(stored_objects)?;
+        if !stored_objects.is_empty() {
+            self.multi_insert_as_database_transactions(stored_objects)?;
+        }
 
         Ok(())
     }
