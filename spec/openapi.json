@@ -20,12 +20,13 @@
           "routes::v1::basic"
         ],
         "summary": "Get the `BasicOutput`s owned by the address considering resolved expiration\nunlock condition.",
+        "description": "Fetches basic outputs for a specified address, considering the resolved expiration unlock conditions.\n    The expiration unlock conditions determine access based on whether the latest checkpoint timestamp is\n    before or after the expiration time. Results can be paginated by providing optional `page` and `limit`\n    query parameters.\n\n    Before Expiration:\n    Objects are accessible to the `owner` if the latest checkpoint UNIX timestamp (in milliseconds)\n    is `less than` the expiration time.\n\n    After Expiration:\n    Objects become accessible to the `return_address` if the latest checkpoint UNIX timestamp (in milliseconds)\n    is `greater than or equal to` the expiration time.",
         "operationId": "resolved",
         "parameters": [
           {
             "name": "address",
             "in": "path",
-            "description": "The hex address to fetch the basic outputs for",
+            "description": "The hexadecimal address for which to fetch basic outputs.",
             "required": true,
             "schema": {
               "type": "string"
@@ -34,7 +35,7 @@
           {
             "name": "page",
             "in": "query",
-            "description": "Page number for pagination",
+            "description": "Page number for pagination. Defaults to 1.",
             "required": false,
             "schema": {
               "type": "integer",
@@ -45,7 +46,7 @@
           {
             "name": "limit",
             "in": "query",
-            "description": "Number of items per page for pagination",
+            "description": "Number of items per page for pagination. Defaults to 10.",
             "required": false,
             "schema": {
               "type": "integer",
@@ -86,12 +87,13 @@
           "routes::v1::basic"
         ],
         "summary": "Get the `BasicOutput`s owned by the address",
+        "description": "Fetches basic outputs for a specified address with optional pagination. This endpoint does not resolve\n    expiration unlock conditions and directly returns the basic outputs associated with the provided address.\n    Results can be paginated by providing optional `page` and `limit` query parameters.",
         "operationId": "basic",
         "parameters": [
           {
             "name": "address",
             "in": "path",
-            "description": "The hex address to fetch the basic outputs for",
+            "description": "The hexadecimal address for which to fetch basic outputs.",
             "required": true,
             "schema": {
               "type": "string"
@@ -100,7 +102,7 @@
           {
             "name": "page",
             "in": "query",
-            "description": "Page number for pagination",
+            "description": "Page number for pagination. Defaults to 1.",
             "required": false,
             "schema": {
               "type": "integer",
@@ -111,7 +113,7 @@
           {
             "name": "limit",
             "in": "query",
-            "description": "Number of items per page for pagination",
+            "description": "Number of items per page for pagination. Defaults to 10.",
             "required": false,
             "schema": {
               "type": "integer",
@@ -152,12 +154,13 @@
           "routes::v1::nft"
         ],
         "summary": "Get the `NftOutput`s owned by the address considering resolved expiration\nunlock condition.",
+        "description": "Fetches NFT outputs for a specified address, considering the resolved expiration unlock conditions.\n    The expiration unlock conditions determine access based on whether the latest checkpoint timestamp is\n    before or after the expiration time. Results can be paginated by providing optional `page` and `limit`\n    query parameters.\n\n    Before Expiration:\n    NFT outputs are accessible to the **owner** if the latest checkpoint UNIX timestamp (in milliseconds)\n    is `less than` the expiration time.\n\n    After Expiration:\n    NFT outputs become accessible to the **return_address** if the latest checkpoint UNIX timestamp (in milliseconds)\n    is `greater than or equal to` the expiration time.",
         "operationId": "resolved",
         "parameters": [
           {
             "name": "address",
             "in": "path",
-            "description": "The hex address to fetch the NFT outputs for",
+            "description": "The hexadecimal address for which to fetch NFT outputs.",
             "required": true,
             "schema": {
               "type": "string"
@@ -166,7 +169,7 @@
           {
             "name": "page",
             "in": "query",
-            "description": "Page number for pagination",
+            "description": "Page number for pagination. Defaults to 1.",
             "required": false,
             "schema": {
               "type": "integer",
@@ -177,7 +180,7 @@
           {
             "name": "limit",
             "in": "query",
-            "description": "Number of items per page for pagination",
+            "description": "Number of items per page for pagination. Defaults to 10.",
             "required": false,
             "schema": {
               "type": "integer",
@@ -217,13 +220,14 @@
         "tags": [
           "routes::v1::nft"
         ],
-        "summary": "Get the `BasicOutput`s owned by the address",
+        "summary": "Get the `NftOutput`s owned by the address",
+        "description": "Fetches NFT outputs for a specified address with optional pagination. This endpoint directly returns\n    NFT outputs associated with the given address without considering expiration unlock conditions.\n    Results can be paginated by providing optional `page` and `limit` query parameters.",
         "operationId": "nft",
         "parameters": [
           {
             "name": "address",
             "in": "path",
-            "description": "The hex address to fetch the NFT outputs for",
+            "description": "The hexadecimal address for which to fetch NFT outputs.",
             "required": true,
             "schema": {
               "type": "string"
@@ -232,7 +236,7 @@
           {
             "name": "page",
             "in": "query",
-            "description": "Page number for pagination",
+            "description": "Page number for pagination. Defaults to 1.",
             "required": false,
             "schema": {
               "type": "integer",
@@ -243,7 +247,7 @@
           {
             "name": "limit",
             "in": "query",
-            "description": "Number of items per page for pagination",
+            "description": "Number of items per page for pagination. Defaults to 10.",
             "required": false,
             "schema": {
               "type": "integer",
