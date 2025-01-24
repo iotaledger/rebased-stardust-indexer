@@ -4,7 +4,7 @@
 use std::net::SocketAddr;
 
 use axum::{Extension, Router, http, response::IntoResponse};
-use http::{HeaderValue, Method};
+use http::Method;
 use tokio::task::JoinHandle;
 use tokio_util::sync::CancellationToken;
 use tower_http::cors::{Any, CorsLayer};
@@ -28,7 +28,7 @@ mod routes;
         routes::v1::nft::nft,
         routes::v1::nft::resolved
     ),
-    servers((url = "http://127.0.0.1:3000"))
+    servers((url = "/"))
 )]
 pub struct ApiDoc;
 
@@ -63,8 +63,13 @@ pub(crate) fn spawn_rest_server(
 }
 
 fn build_app(connection_pool: ConnectionPool) -> Router {
+    // Allow all origins (CORS policy) - This is safe because the API is public and
+    // does not require authentication. CORS is a browser-enforced mechanism
+    // that restricts cross-origin requests, but since the API is already accessible
+    // without credentials or sensitive data, there is no additional security risk.
+    // Abuse should be mitigated via backend protections such as rate-limiting.
     let cors = CorsLayer::new()
-        .allow_origin("http://0.0.0.0".parse::<HeaderValue>().unwrap())
+        .allow_origin(Any)
         .allow_methods(Method::GET)
         .allow_headers(Any);
 

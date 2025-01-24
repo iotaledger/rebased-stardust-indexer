@@ -67,6 +67,9 @@ $ cargo run
 $ cargo test
 ```
 
+## Swagger Documentation
+Access the Swagger documentation at `/swagger-ui`.
+
 ## Supported features
 
 * Index expiration unlock conditions for shared Nft and Basic outputs.
