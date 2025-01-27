@@ -1,6 +1,6 @@
 //! Checkpoint syncing Handlers for the Indexer
 
-use std::collections::HashMap;
+use std::{collections::HashMap, sync::Arc};
 
 use iota_data_ingestion_core::{DataIngestionMetrics, IndexerExecutor, ReaderOptions, WorkerPool};
 use iota_types::messages_checkpoint::CheckpointSequenceNumber;
@@ -34,6 +34,7 @@ impl Indexer {
         pool: ConnectionPool,
         pool_progress_store: ConnectionPool,
         indexer_config: Box<IndexerConfig>,
+        registry: Arc<Registry>,
     ) -> Result<Self, anyhow::Error> {
         // Notify the IndexerExecutor to gracefully shutdown
         // NOTE: this will be replaced by a CancellationToken once this issue will be
@@ -49,7 +50,7 @@ impl Indexer {
             // the hood is to calculate the channel capacity by this formula `number_of_jobs *
             // MAX_CHECKPOINTS_IN_PROGRESS`, where MAX_CHECKPOINTS_IN_PROGRESS = 10000
             1,
-            DataIngestionMetrics::new(&Registry::default()),
+            DataIngestionMetrics::new(&*registry),
         );
 
         // Register the CheckpointWorker which will handle the CheckpointData once

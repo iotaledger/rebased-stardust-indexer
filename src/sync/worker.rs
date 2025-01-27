@@ -14,8 +14,9 @@ use iota_types::{
 };
 
 use crate::{
+    INDEXER_METRICS,
     db::ConnectionPool,
-    models::{ExpirationUnlockCondition, StoredObject},
+    models::{ExpirationUnlockCondition, ObjectType, StoredObject},
     schema::{expiration_unlock_conditions::dsl::*, objects::dsl::*},
 };
 
@@ -77,6 +78,7 @@ impl CheckpointWorker {
                     .set(&stored_object)
                     .execute(conn)?;
 
+                let type_ = stored_object.object_type;
                 let eu = ExpirationUnlockCondition::try_from(stored_object)?;
 
                 insert_into(expiration_unlock_conditions)
@@ -85,6 +87,19 @@ impl CheckpointWorker {
                     .do_update()
                     .set(&eu)
                     .execute(conn)?;
+
+                match type_ {
+                    ObjectType::Basic => INDEXER_METRICS
+                        .get()
+                        .expect("global should be initialized")
+                        .indexed_basic_outputs_count
+                        .inc(),
+                    ObjectType::Nft => INDEXER_METRICS
+                        .get()
+                        .expect("global should be initialized")
+                        .indexed_nft_outputs_count
+                        .inc(),
+                }
 
                 Ok(())
             })?;
@@ -97,6 +112,12 @@ impl CheckpointWorker {
 #[async_trait]
 impl Worker for CheckpointWorker {
     async fn process_checkpoint(&self, checkpoint: CheckpointData) -> anyhow::Result<()> {
+        INDEXER_METRICS
+            .get()
+            .expect("metrics global should be initialized")
+            .last_checkpoint_checked
+            .set(checkpoint.checkpoint_summary.sequence_number as i64);
+
         let mut stored_objects = Vec::new();
         for checkpoint_tx in checkpoint.transactions.into_iter() {
             if self.tx_contains_relevant_objects(&checkpoint_tx)? {
@@ -119,6 +140,12 @@ impl Worker for CheckpointWorker {
         if !stored_objects.is_empty() {
             self.multi_insert_as_database_transactions(stored_objects)?;
         }
+
+        INDEXER_METRICS
+            .get()
+            .expect("metrics global should be initialized")
+            .last_checkpoint_indexed
+            .set(checkpoint.checkpoint_summary.sequence_number as i64);
 
         Ok(())
     }

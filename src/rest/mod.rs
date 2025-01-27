@@ -1,10 +1,11 @@
 // Copyright (c) 2024 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-use std::net::SocketAddr;
+use std::{net::SocketAddr, sync::Arc};
 
 use axum::{Extension, Router, http, response::IntoResponse};
 use http::Method;
+use prometheus::Registry;
 use tokio::task::JoinHandle;
 use tokio_util::sync::CancellationToken;
 use tower_http::cors::{Any, CorsLayer};
@@ -41,9 +42,10 @@ pub(crate) fn spawn_rest_server(
     socket_addr: SocketAddr,
     connection_pool: ConnectionPool,
     cancel_token: CancellationToken,
+    registry: Arc<Registry>,
 ) -> JoinHandle<()> {
     tokio::spawn(async move {
-        let app = build_app(connection_pool);
+        let app = build_app(connection_pool, registry);
 
         let listener = tokio::net::TcpListener::bind(socket_addr)
             .await
@@ -62,7 +64,7 @@ pub(crate) fn spawn_rest_server(
     })
 }
 
-fn build_app(connection_pool: ConnectionPool) -> Router {
+fn build_app(connection_pool: ConnectionPool, registry: Arc<Registry>) -> Router {
     // Allow all origins (CORS policy) - This is safe because the API is public and
     // does not require authentication. CORS is a browser-enforced mechanism
     // that restricts cross-origin requests, but since the API is already accessible
@@ -76,6 +78,7 @@ fn build_app(connection_pool: ConnectionPool) -> Router {
     Router::new()
         .merge(router_all())
         .layer(Extension(State { connection_pool }))
+        .layer(Extension(registry))
         .layer(cors)
         .fallback(fallback)
 }
