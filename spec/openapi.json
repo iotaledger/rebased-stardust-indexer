@@ -42,31 +42,6 @@
         }
       }
     },
-    "/metrics": {
-      "get": {
-        "tags": [
-          "routes::metrics"
-        ],
-        "summary": "Retrieve the Prometheus metrics of the service.",
-        "description": "Retrieve the Prometheus metrics of the service.",
-        "operationId": "metrics",
-        "responses": {
-          "200": {
-            "description": "Successful request",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "type": "string"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal server error"
-          }
-        }
-      }
-    },
     "/v1/basic/resolved/{address}": {
       "get": {
         "tags": [
