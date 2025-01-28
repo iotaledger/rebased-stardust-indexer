@@ -6,15 +6,16 @@ use prometheus::{
     register_int_gauge_with_registry,
 };
 
+/// Metrics for the service.
 #[derive(Clone)]
-pub struct IndexerMetrics {
+pub struct Metrics {
     pub last_checkpoint_checked: IntGauge,
     pub last_checkpoint_indexed: IntGauge,
     pub indexed_basic_outputs_count: IntCounter,
     pub indexed_nft_outputs_count: IntCounter,
 }
 
-impl IndexerMetrics {
+impl Metrics {
     pub fn new(registry: &Registry) -> Self {
         Self {
             last_checkpoint_checked: register_int_gauge_with_registry!(

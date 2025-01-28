@@ -14,7 +14,7 @@ use iota_types::{
 };
 
 use crate::{
-    INDEXER_METRICS,
+    METRICS,
     db::ConnectionPool,
     models::{ExpirationUnlockCondition, ObjectType, StoredObject},
     schema::{expiration_unlock_conditions::dsl::*, objects::dsl::*},
@@ -89,12 +89,12 @@ impl CheckpointWorker {
                     .execute(conn)?;
 
                 match type_ {
-                    ObjectType::Basic => INDEXER_METRICS
+                    ObjectType::Basic => METRICS
                         .get()
                         .expect("global should be initialized")
                         .indexed_basic_outputs_count
                         .inc(),
-                    ObjectType::Nft => INDEXER_METRICS
+                    ObjectType::Nft => METRICS
                         .get()
                         .expect("global should be initialized")
                         .indexed_nft_outputs_count
@@ -112,7 +112,7 @@ impl CheckpointWorker {
 #[async_trait]
 impl Worker for CheckpointWorker {
     async fn process_checkpoint(&self, checkpoint: CheckpointData) -> anyhow::Result<()> {
-        INDEXER_METRICS
+        METRICS
             .get()
             .expect("metrics global should be initialized")
             .last_checkpoint_checked
@@ -141,7 +141,7 @@ impl Worker for CheckpointWorker {
             self.multi_insert_as_database_transactions(stored_objects)?;
         }
 
-        INDEXER_METRICS
+        METRICS
             .get()
             .expect("metrics global should be initialized")
             .last_checkpoint_indexed

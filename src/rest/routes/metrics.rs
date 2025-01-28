@@ -33,9 +33,9 @@ mod tests {
 
     use super::*;
     use crate::{
-        INDEXER_METRICS,
+        METRICS,
         db::{ConnectionPool, Name},
-        metrics::IndexerMetrics,
+        metrics::Metrics,
         rest::{routes::v1::get_free_port_for_testing_only, spawn_rest_server},
     };
 
@@ -64,31 +64,15 @@ mod tests {
 
         tokio::time::sleep(std::time::Duration::from_secs(1)).await;
 
-        INDEXER_METRICS.get_or_init(|| Arc::new(IndexerMetrics::new(&*registry)));
+        METRICS.get_or_init(|| Arc::new(Metrics::new(&*registry)));
 
-        INDEXER_METRICS
-            .get()
-            .unwrap()
-            .last_checkpoint_checked
-            .set(42);
+        METRICS.get().unwrap().last_checkpoint_checked.set(42);
 
-        INDEXER_METRICS
-            .get()
-            .unwrap()
-            .last_checkpoint_indexed
-            .set(42);
+        METRICS.get().unwrap().last_checkpoint_indexed.set(42);
 
-        INDEXER_METRICS
-            .get()
-            .unwrap()
-            .indexed_basic_outputs_count
-            .inc();
+        METRICS.get().unwrap().indexed_basic_outputs_count.inc();
 
-        INDEXER_METRICS
-            .get()
-            .unwrap()
-            .indexed_nft_outputs_count
-            .inc();
+        METRICS.get().unwrap().indexed_nft_outputs_count.inc();
 
         let resp = reqwest::get(format!("http://127.0.0.1:{}/metrics", bind_port))
             .await

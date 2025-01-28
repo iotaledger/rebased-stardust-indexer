@@ -9,8 +9,7 @@ use iota_data_ingestion_core::ProgressStore;
 use iota_types::messages_checkpoint::CheckpointSequenceNumber;
 
 use crate::{
-    INDEXER_METRICS, db::ConnectionPool, models::LastCheckpointSync,
-    schema::last_checkpoint_sync::dsl::*,
+    METRICS, db::ConnectionPool, models::LastCheckpointSync, schema::last_checkpoint_sync::dsl::*,
 };
 
 /// Record in `SQLite` the latest synced checkpoint, this will allow the Indexer
@@ -61,7 +60,7 @@ impl ProgressStore for SqliteProgressStore {
             .set(&value)
             .execute(&mut conn)?;
 
-        INDEXER_METRICS
+        METRICS
             .get()
             .expect("Indexer metrics not initialized")
             .last_checkpoint_checked

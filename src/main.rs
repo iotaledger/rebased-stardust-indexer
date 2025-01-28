@@ -28,9 +28,10 @@ mod sync;
 
 use tokio_util::sync::CancellationToken;
 
-use crate::metrics::IndexerMetrics;
+use crate::metrics::Metrics;
 
-pub static INDEXER_METRICS: OnceLock<Arc<IndexerMetrics>> = OnceLock::new();
+/// Global metrics registry.
+pub(crate) static METRICS: OnceLock<Arc<Metrics>> = OnceLock::new();
 
 /// The main CLI application
 #[derive(Parser, Clone, Debug)]
@@ -96,8 +97,9 @@ async fn run_indexer(
 ) -> anyhow::Result<()> {
     init_tracing(log_level);
 
+    // Initialize the global metrics registry
     let registry = Arc::new(Registry::default());
-    INDEXER_METRICS.get_or_init(|| Arc::new(IndexerMetrics::new(&registry)));
+    METRICS.get_or_init(|| Arc::new(Metrics::new(&registry)));
 
     let connection_pool = ConnectionPool::new(connection_pool_config.clone(), Name::Objects)?;
     let progress_store_pool = ConnectionPool::new(connection_pool_config, Name::ProgressStore)?;
