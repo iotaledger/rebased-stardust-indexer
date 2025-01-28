@@ -36,7 +36,7 @@ mod tests {
         METRICS,
         db::{ConnectionPool, Name},
         metrics::Metrics,
-        rest::{routes::v1::get_free_port_for_testing_only, spawn_rest_server},
+        rest::{routes::get_free_port_for_testing_only, spawn_rest_server},
     };
 
     #[tokio::test]

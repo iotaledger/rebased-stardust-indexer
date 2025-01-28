@@ -22,3 +22,16 @@ pub(crate) fn router_all() -> Router {
             .merge(Router::new().route("/metrics", get(metrics))),
     )
 }
+
+/// Get a free port for testing purposes.
+#[cfg(test)]
+fn get_free_port_for_testing_only() -> Option<u16> {
+    use std::net::{SocketAddr, TcpListener};
+    match TcpListener::bind("127.0.0.1:0") {
+        Ok(listener) => {
+            let addr: SocketAddr = listener.local_addr().ok()?;
+            Some(addr.port())
+        }
+        Err(_) => None,
+    }
+}

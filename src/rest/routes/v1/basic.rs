@@ -110,8 +110,9 @@ mod tests {
         db::{ConnectionPool, Name, PoolConnection},
         models::{ExpirationUnlockCondition, IotaAddress, StoredObject},
         rest::{
-            routes::v1::{
-                basic::BasicOutput, ensure_checkpoint_is_set, get_free_port_for_testing_only,
+            routes::{
+                get_free_port_for_testing_only,
+                v1::{basic::BasicOutput, ensure_checkpoint_is_set},
             },
             spawn_rest_server,
         },

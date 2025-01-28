@@ -108,8 +108,9 @@ mod tests {
         db::{ConnectionPool, Name, PoolConnection},
         models::{ExpirationUnlockCondition, IotaAddress, StoredObject},
         rest::{
-            routes::v1::{
-                ensure_checkpoint_is_set, get_free_port_for_testing_only, nft::NftOutput,
+            routes::{
+                get_free_port_for_testing_only,
+                v1::{ensure_checkpoint_is_set, nft::NftOutput},
             },
             spawn_rest_server,
         },
