@@ -27,7 +27,7 @@ pub struct Indexer {
     // https://github.com/iotaledger/iota/issues/4383
     shutdown_tx: oneshot::Sender<()>,
     handle: JoinHandle<anyhow::Result<ExecutorProgress>>,
-    prom_handle: JoinHandle<Result<(), anyhow::Error>>,
+    prom_handle: JoinHandle<anyhow::Result<()>>,
     prom_cancel_token: CancellationToken,
 }
 
