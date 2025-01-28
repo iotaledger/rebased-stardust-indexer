@@ -87,7 +87,7 @@
           "routes::v1::basic"
         ],
         "summary": "Get the `BasicOutput`s owned by the address",
-        "description": "Fetches basic outputs for a specified address with optional pagination. This endpoint does not resolve\n    expiration unlock conditions and directly returns the basic outputs associated with the provided address.\n    Results can be paginated by providing optional `page` and `limit` query parameters.",
+        "description": "Fetches basic outputs for a specified address with optional pagination.\n    It returns basic outputs with expiration unlock conditions that refer to the given address either as the `owner` or as the `return_address`.\n    Results can be paginated by providing optional `page` and `limit` query parameters.",
         "operationId": "basic",
         "parameters": [
           {
@@ -221,7 +221,7 @@
           "routes::v1::nft"
         ],
         "summary": "Get the `NftOutput`s owned by the address",
-        "description": "Fetches NFT outputs for a specified address with optional pagination. This endpoint directly returns\n    NFT outputs associated with the given address without considering expiration unlock conditions.\n    Results can be paginated by providing optional `page` and `limit` query parameters.",
+        "description": "Fetches NFT outputs for a specified address with optional pagination.\n    It returns NFT outputs with expiration unlock conditions that refer to the given address either as the `owner` or as the `return_address`.\n    Results can be paginated by providing optional `page` and `limit` query parameters.",
         "operationId": "nft",
         "parameters": [
           {

@@ -28,8 +28,8 @@ pub(crate) fn router() -> Router {
 get,
 path = "/v1/basic/{address}",
 description =
-    "Fetches basic outputs for a specified address with optional pagination. This endpoint does not resolve
-    expiration unlock conditions and directly returns the basic outputs associated with the provided address.
+    "Fetches basic outputs for a specified address with optional pagination.
+    It returns basic outputs with expiration unlock conditions that refer to the given address either as the `owner` or as the `return_address`.
     Results can be paginated by providing optional `page` and `limit` query parameters.",
     responses(
         (status = 200, description = "Successful request", body = BasicOutputVec),

@@ -28,8 +28,8 @@ pub(crate) fn router() -> Router {
 get,
 path = "/v1/nft/{address}",
 description =
-    "Fetches NFT outputs for a specified address with optional pagination. This endpoint directly returns
-    NFT outputs associated with the given address without considering expiration unlock conditions.
+    "Fetches NFT outputs for a specified address with optional pagination.
+    It returns NFT outputs with expiration unlock conditions that refer to the given address either as the `owner` or as the `return_address`.
     Results can be paginated by providing optional `page` and `limit` query parameters.",
     responses(
         (status = 200, description = "Successful request", body = NftOutputVec),
