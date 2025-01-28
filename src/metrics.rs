@@ -12,7 +12,9 @@ use prometheus::{
     IntCounter, IntGauge, Registry, register_int_counter_with_registry,
     register_int_gauge_with_registry,
 };
-use tracing::info;
+use tokio::task::JoinHandle;
+use tokio_util::sync::CancellationToken;
+use tracing::{error, info};
 
 /// Metrics for the service.
 #[derive(Clone)]
@@ -59,24 +61,36 @@ pub(crate) static METRICS: OnceLock<Arc<Metrics>> = OnceLock::new();
 const METRICS_ROUTE: &str = "/metrics";
 
 /// Start the Prometheus metrics service.
-pub(crate) fn start_prometheus_server(addr: SocketAddr) -> Result<Registry, anyhow::Error> {
-    info!("Starting prometheus server with label: Rebased Indexer Metrics");
-
+pub(crate) fn spawn_prometheus_server(
+    socket_addr: SocketAddr,
+    cancel_token: CancellationToken,
+) -> (Registry, JoinHandle<()>) {
     let registry = Registry::default();
     METRICS.get_or_init(|| Arc::new(Metrics::new(&registry)));
 
-    let app = Router::new()
-        .route(METRICS_ROUTE, get(metrics))
-        .layer(Extension(registry.clone()));
-
-    tokio::spawn(async move {
-        let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
-        axum::serve(listener, app.into_make_service())
+    let extension = registry.clone();
+    let handle = tokio::spawn(async move {
+        let listener = tokio::net::TcpListener::bind(socket_addr)
             .await
-            .unwrap();
+            .expect("failed to bind to socket");
+
+        info!("Listening on: {}", socket_addr);
+
+        let app = Router::new()
+            .route(METRICS_ROUTE, get(metrics))
+            .layer(Extension(extension));
+
+        axum::serve(listener, app)
+            .with_graceful_shutdown(async move {
+                cancel_token.cancelled().await;
+                info!("Shutdown signal received.");
+            })
+            .await
+            .inspect_err(|e| error!("Server encountered an error: {e}"))
+            .ok();
     });
 
-    Ok(registry)
+    (registry, handle)
 }
 
 /// Retrieve the Prometheus metrics of the service.
@@ -107,7 +121,14 @@ mod tests {
         let _ = tracing::subscriber::set_default(sub);
 
         let bind_port = get_free_port_for_testing_only().unwrap();
-        let _ = start_prometheus_server(format!("127.0.0.1:{}", bind_port).parse().unwrap());
+        let cancel_token = CancellationToken::new();
+
+        // Start the Prometheus server in a separate task and capture the join handle
+        let (_registry, server_task) = spawn_prometheus_server(
+            format!("127.0.0.1:{}", bind_port).parse().unwrap(),
+            cancel_token.clone(),
+        );
+
         tokio::time::sleep(std::time::Duration::from_secs(1)).await;
 
         METRICS.get().unwrap().last_checkpoint_checked.set(42);
@@ -147,5 +168,8 @@ mod tests {
             parse_metric_value(&body, "indexed_nft_outputs_count"),
             Some(1.0)
         );
+
+        cancel_token.cancel();
+        let _ = server_task.await.unwrap();
     }
 }

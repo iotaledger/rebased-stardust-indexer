@@ -5,10 +5,11 @@ use std::collections::HashMap;
 use iota_data_ingestion_core::{DataIngestionMetrics, IndexerExecutor, ReaderOptions, WorkerPool};
 use iota_types::messages_checkpoint::CheckpointSequenceNumber;
 use tokio::{sync::oneshot, task::JoinHandle};
+use tokio_util::sync::CancellationToken;
 
 use crate::{
     db::ConnectionPool,
-    metrics::start_prometheus_server,
+    metrics::spawn_prometheus_server,
     sync::{IndexerConfig, progress_store::SqliteProgressStore, worker::CheckpointWorker},
 };
 
@@ -26,6 +27,8 @@ pub struct Indexer {
     // https://github.com/iotaledger/iota/issues/4383
     shutdown_tx: oneshot::Sender<()>,
     handle: JoinHandle<anyhow::Result<ExecutorProgress>>,
+    prom_handle: JoinHandle<()>,
+    prom_cancel_token: CancellationToken,
 }
 
 impl Indexer {
@@ -36,7 +39,11 @@ impl Indexer {
         indexer_config: Box<IndexerConfig>,
     ) -> Result<Self, anyhow::Error> {
         // Set up the Prometheus metrics service
-        let registry = start_prometheus_server(indexer_config.metrics_address.clone())?;
+        let prom_cancel_token = CancellationToken::new();
+        let (registry, prom_handle) = spawn_prometheus_server(
+            indexer_config.metrics_address.clone(),
+            prom_cancel_token.clone(),
+        );
 
         // Notify the IndexerExecutor to gracefully shutdown
         // NOTE: this will be replaced by a CancellationToken once this issue will be
@@ -82,6 +89,8 @@ impl Indexer {
         Ok(Self {
             shutdown_tx: exit_sender,
             handle,
+            prom_handle,
+            prom_cancel_token,
         })
     }
 
@@ -91,10 +100,15 @@ impl Indexer {
     pub async fn graceful_shutdown(self) -> anyhow::Result<()> {
         tracing::info!("Received shutdown Signal");
         _ = self.shutdown_tx.send(());
+        self.prom_cancel_token.cancel();
         tracing::info!("Wait for task to shutdown");
         self.handle
             .await?
             .inspect(|_| tracing::info!("Task shutdown successfully"))?;
+        _ = self
+            .prom_handle
+            .await
+            .inspect(|_| tracing::info!("Task shutdown successfully"));
 
         Ok(())
     }
