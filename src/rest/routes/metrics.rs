@@ -4,11 +4,11 @@ use axum::Extension;
 use http::StatusCode;
 use prometheus::Registry;
 
-/// Retrieve the metrics of the service.
+/// Retrieve the Prometheus metrics of the service.
 #[utoipa::path(
     get,
     path = "/metrics",
-    description = "Retrieve the metrics of the service.",
+    description = "Retrieve the Prometheus metrics of the service.",
     responses(
         (status = 200, description = "Successful request", body = String),
         (status = 500, description = "Internal server error")
