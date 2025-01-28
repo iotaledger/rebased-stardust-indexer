@@ -27,7 +27,7 @@ pub struct Indexer {
     // https://github.com/iotaledger/iota/issues/4383
     shutdown_tx: oneshot::Sender<()>,
     handle: JoinHandle<anyhow::Result<ExecutorProgress>>,
-    prom_handle: JoinHandle<()>,
+    prom_handle: JoinHandle<Result<(), anyhow::Error>>,
     prom_cancel_token: CancellationToken,
 }
 
@@ -43,7 +43,7 @@ impl Indexer {
         let (registry, prom_handle) = spawn_prometheus_server(
             indexer_config.metrics_address.clone(),
             prom_cancel_token.clone(),
-        );
+        )?;
 
         // Notify the IndexerExecutor to gracefully shutdown
         // NOTE: this will be replaced by a CancellationToken once this issue will be
@@ -105,10 +105,9 @@ impl Indexer {
         self.handle
             .await?
             .inspect(|_| tracing::info!("Task shutdown successfully"))?;
-        _ = self
-            .prom_handle
-            .await
-            .inspect(|_| tracing::info!("Task shutdown successfully"));
+        self.prom_handle
+            .await?
+            .inspect(|_| tracing::info!("Task shutdown successfully"))?;
 
         Ok(())
     }

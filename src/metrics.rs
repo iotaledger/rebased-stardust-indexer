@@ -14,7 +14,7 @@ use prometheus::{
 };
 use tokio::task::JoinHandle;
 use tokio_util::sync::CancellationToken;
-use tracing::{error, info};
+use tracing::info;
 
 /// Metrics for the service.
 #[derive(Clone)]
@@ -64,15 +64,16 @@ const METRICS_ROUTE: &str = "/metrics";
 pub(crate) fn spawn_prometheus_server(
     socket_addr: SocketAddr,
     cancel_token: CancellationToken,
-) -> (Registry, JoinHandle<()>) {
+) -> Result<(Registry, JoinHandle<Result<(), anyhow::Error>>), anyhow::Error> {
     let registry = Registry::default();
     METRICS.get_or_init(|| Arc::new(Metrics::new(&registry)));
 
     let extension = registry.clone();
     let handle = tokio::spawn(async move {
+        // Attempt to bind the socket
         let listener = tokio::net::TcpListener::bind(socket_addr)
             .await
-            .expect("failed to bind to socket");
+            .map_err(|e| anyhow::anyhow!("Failed to bind to socket {}: {}", socket_addr, e))?;
 
         info!("Listening on: {}", socket_addr);
 
@@ -80,17 +81,19 @@ pub(crate) fn spawn_prometheus_server(
             .route(METRICS_ROUTE, get(metrics))
             .layer(Extension(extension));
 
+        // Run the server with graceful shutdown
         axum::serve(listener, app)
             .with_graceful_shutdown(async move {
                 cancel_token.cancelled().await;
                 info!("Shutdown signal received.");
             })
             .await
-            .inspect_err(|e| error!("Server encountered an error: {e}"))
-            .ok();
+            .map_err(|e| anyhow::anyhow!("Server encountered an error: {}", e))?;
+
+        Ok(())
     });
 
-    (registry, handle)
+    Ok((registry, handle))
 }
 
 /// Retrieve the Prometheus metrics of the service.
@@ -127,7 +130,8 @@ mod tests {
         let (_registry, server_task) = spawn_prometheus_server(
             format!("127.0.0.1:{}", bind_port).parse().unwrap(),
             cancel_token.clone(),
-        );
+        )
+        .unwrap();
 
         tokio::time::sleep(std::time::Duration::from_secs(1)).await;
 
