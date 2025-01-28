@@ -58,7 +58,8 @@ impl Metrics {
 pub(crate) static METRICS: OnceLock<Arc<Metrics>> = OnceLock::new();
 const METRICS_ROUTE: &str = "/metrics";
 
-pub fn start_prometheus_server(addr: SocketAddr) -> Result<Registry, anyhow::Error> {
+/// Start the Prometheus metrics service.
+pub(crate) fn start_prometheus_server(addr: SocketAddr) -> Result<Registry, anyhow::Error> {
     info!("Starting prometheus server with label: Rebased Indexer Metrics");
 
     let registry = Registry::default();
