@@ -95,8 +95,9 @@ struct PaginationParams {
     page_size: Option<u32>,
 }
 
+/// Get a free port for testing purposes.
 #[cfg(test)]
-fn get_free_port_for_testing_only() -> Option<u16> {
+pub(crate) fn get_free_port_for_testing_only() -> Option<u16> {
     use std::net::{SocketAddr, TcpListener};
     match TcpListener::bind("127.0.0.1:0") {
         Ok(listener) => {

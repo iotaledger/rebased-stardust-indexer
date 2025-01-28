@@ -24,6 +24,8 @@ mod routes;
 #[derive(OpenApi)]
 #[openapi(
     paths(
+        routes::health::health,
+        routes::metrics::metrics,
         routes::v1::basic::basic,
         routes::v1::basic::resolved,
         routes::v1::nft::nft,
