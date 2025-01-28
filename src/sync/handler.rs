@@ -1,14 +1,14 @@
 //! Checkpoint syncing Handlers for the Indexer
 
-use std::{collections::HashMap, sync::Arc};
+use std::collections::HashMap;
 
 use iota_data_ingestion_core::{DataIngestionMetrics, IndexerExecutor, ReaderOptions, WorkerPool};
 use iota_types::messages_checkpoint::CheckpointSequenceNumber;
-use prometheus::Registry;
 use tokio::{sync::oneshot, task::JoinHandle};
 
 use crate::{
     db::ConnectionPool,
+    metrics::start_prometheus_server,
     sync::{IndexerConfig, progress_store::SqliteProgressStore, worker::CheckpointWorker},
 };
 
@@ -34,8 +34,10 @@ impl Indexer {
         pool: ConnectionPool,
         pool_progress_store: ConnectionPool,
         indexer_config: Box<IndexerConfig>,
-        registry: Arc<Registry>,
     ) -> Result<Self, anyhow::Error> {
+        // Set up the Prometheus metrics service
+        let registry = start_prometheus_server(indexer_config.metrics_address.clone())?;
+
         // Notify the IndexerExecutor to gracefully shutdown
         // NOTE: this will be replaced by a CancellationToken once this issue will be
         // resolved: https://github.com/iotaledger/iota/issues/4383
@@ -50,7 +52,7 @@ impl Indexer {
             // the hood is to calculate the channel capacity by this formula `number_of_jobs *
             // MAX_CHECKPOINTS_IN_PROGRESS`, where MAX_CHECKPOINTS_IN_PROGRESS = 10000
             1,
-            DataIngestionMetrics::new(&*registry),
+            DataIngestionMetrics::new(&registry),
         );
 
         // Register the CheckpointWorker which will handle the CheckpointData once

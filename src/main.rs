@@ -1,15 +1,10 @@
 // Copyright (c) 2024 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-use std::{
-    fs,
-    path::Path,
-    sync::{Arc, OnceLock},
-};
+use std::{fs, path::Path};
 
 use clap::{Parser, Subcommand};
 use db::{ConnectionPool, ConnectionPoolConfig, Name};
-use prometheus::Registry;
 use tracing::{Level, error, info};
 use tracing_subscriber::FmtSubscriber;
 use utoipa::OpenApi;
@@ -27,11 +22,6 @@ mod schema;
 mod sync;
 
 use tokio_util::sync::CancellationToken;
-
-use crate::metrics::Metrics;
-
-/// Global metrics registry.
-pub(crate) static METRICS: OnceLock<Arc<Metrics>> = OnceLock::new();
 
 /// The main CLI application
 #[derive(Parser, Clone, Debug)]
@@ -97,10 +87,6 @@ async fn run_indexer(
 ) -> anyhow::Result<()> {
     init_tracing(log_level);
 
-    // Initialize the global metrics registry
-    let registry = Arc::new(Registry::default());
-    METRICS.get_or_init(|| Arc::new(Metrics::new(&registry)));
-
     let connection_pool = ConnectionPool::new(connection_pool_config.clone(), Name::Objects)?;
     let progress_store_pool = ConnectionPool::new(connection_pool_config, Name::ProgressStore)?;
 
@@ -112,19 +98,14 @@ async fn run_indexer(
     progress_store_pool.run_migrations()?;
 
     // Spawn synchronization logic from a Fullnode
-    let indexer_handle = Indexer::init(
-        connection_pool.clone(),
-        progress_store_pool,
-        config,
-        registry.clone(),
-    )
-    .await?;
+    let indexer_handle =
+        Indexer::init(connection_pool.clone(), progress_store_pool, config).await?;
 
     // Set up a CTRL+C handler for graceful shutdown
     let token = setup_shutdown_signal(indexer_handle);
 
     // Spawn the REST server
-    spawn_rest_server(rest_api_address, connection_pool, token, registry)
+    spawn_rest_server(rest_api_address, connection_pool, token)
         .await
         .inspect_err(|e| error!("REST server terminated with error: {e}"))?;
 

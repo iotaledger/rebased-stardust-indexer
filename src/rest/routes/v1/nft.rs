@@ -96,10 +96,8 @@ fn stored_objects_to_nft_outputs(
 
 #[cfg(test)]
 mod tests {
-    use std::sync::Arc;
 
     use iota_types::base_types::ObjectID;
-    use prometheus::Registry;
     use tracing::Level;
     use tracing_subscriber::FmtSubscriber;
 
@@ -164,7 +162,6 @@ mod tests {
             format!("127.0.0.1:{}", bind_port).parse().unwrap(),
             pool,
             cancel_token.clone(),
-            Arc::new(Registry::default()),
         );
 
         tokio::time::sleep(std::time::Duration::from_secs(1)).await;
@@ -258,7 +255,6 @@ mod tests {
             format!("127.0.0.1:{port}").parse().unwrap(),
             pool,
             cancel_token.clone(),
-            Arc::new(Registry::default()),
         );
 
         tokio::time::sleep(std::time::Duration::from_secs(1)).await;
@@ -327,7 +323,6 @@ mod tests {
             format!("127.0.0.1:{}", bind_port).parse().unwrap(),
             pool,
             cancel_token.clone(),
-            Arc::new(Registry::default()),
         );
 
         tokio::time::sleep(std::time::Duration::from_secs(1)).await;

@@ -14,8 +14,8 @@ use iota_types::{
 };
 
 use crate::{
-    METRICS,
     db::ConnectionPool,
+    metrics::METRICS,
     models::{ExpirationUnlockCondition, ObjectType, StoredObject},
     schema::{expiration_unlock_conditions::dsl::*, objects::dsl::*},
 };
