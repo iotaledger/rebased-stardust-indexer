@@ -27,7 +27,7 @@ pub struct Indexer {
     // https://github.com/iotaledger/iota/issues/4383
     shutdown_tx: oneshot::Sender<()>,
     handle: JoinHandle<anyhow::Result<ExecutorProgress>>,
-    prom_handle: JoinHandle<anyhow::Result<()>>,
+    prometheus_handle: JoinHandle<anyhow::Result<()>>,
     prom_cancel_token: CancellationToken,
 }
 
@@ -89,7 +89,7 @@ impl Indexer {
         Ok(Self {
             shutdown_tx: exit_sender,
             handle,
-            prom_handle,
+            prometheus_handle: prom_handle,
             prom_cancel_token,
         })
     }
@@ -105,7 +105,7 @@ impl Indexer {
         self.handle
             .await?
             .inspect(|_| tracing::info!("Task shutdown successfully"))?;
-        self.prom_handle
+        self.prometheus_handle
             .await?
             .inspect(|_| tracing::info!("Task shutdown successfully"))?;
 

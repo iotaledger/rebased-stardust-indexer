@@ -19,7 +19,7 @@ use tracing::info;
 /// Metrics for the service.
 #[derive(Clone)]
 pub struct Metrics {
-    pub last_checkpoint_checked: IntGauge,
+    pub last_checkpoint_received: IntGauge,
     pub last_checkpoint_indexed: IntGauge,
     pub indexed_basic_outputs_count: IntCounter,
     pub indexed_nft_outputs_count: IntCounter,
@@ -28,8 +28,8 @@ pub struct Metrics {
 impl Metrics {
     pub fn new(registry: &Registry) -> Self {
         Self {
-            last_checkpoint_checked: register_int_gauge_with_registry!(
-                "last_checkpoint_checked",
+            last_checkpoint_received: register_int_gauge_with_registry!(
+                "last_checkpoint_received",
                 "The last checkpoint received from the remote store",
                 registry,
             )
@@ -135,7 +135,7 @@ mod tests {
 
         tokio::time::sleep(std::time::Duration::from_secs(1)).await;
 
-        METRICS.get().unwrap().last_checkpoint_checked.set(42);
+        METRICS.get().unwrap().last_checkpoint_received.set(42);
         METRICS.get().unwrap().last_checkpoint_indexed.set(42);
         METRICS.get().unwrap().indexed_basic_outputs_count.inc();
         METRICS.get().unwrap().indexed_nft_outputs_count.inc();
@@ -143,34 +143,33 @@ mod tests {
         let resp = reqwest::get(format!("http://127.0.0.1:{}/metrics", bind_port))
             .await
             .unwrap();
-
         assert_eq!(resp.status(), 200);
 
         let body = resp.text().await.unwrap();
 
-        fn parse_metric_value(metrics: &str, metric_name: &str) -> Option<f64> {
+        fn parse_metric_value(metrics: &str, metric_name: &str) -> Option<u64> {
             metrics
                 .lines()
                 .find(|line| line.starts_with(metric_name))
                 .and_then(|line| line.split_whitespace().nth(1))
-                .and_then(|value| value.parse::<f64>().ok())
+                .and_then(|value| value.parse::<u64>().ok())
         }
 
         assert_eq!(
-            parse_metric_value(&body, "last_checkpoint_checked"),
-            Some(42.0)
+            parse_metric_value(&body, "last_checkpoint_received"),
+            Some(42)
         );
         assert_eq!(
             parse_metric_value(&body, "last_checkpoint_indexed"),
-            Some(42.0)
+            Some(42)
         );
         assert_eq!(
             parse_metric_value(&body, "indexed_basic_outputs_count"),
-            Some(1.0)
+            Some(1)
         );
         assert_eq!(
             parse_metric_value(&body, "indexed_nft_outputs_count"),
-            Some(1.0)
+            Some(1)
         );
 
         cancel_token.cancel();

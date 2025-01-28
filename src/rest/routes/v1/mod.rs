@@ -4,13 +4,13 @@
 use std::sync::atomic::Ordering;
 
 use axum::Router;
-use diesel::{dsl::sql, prelude::*, sql_types::BigInt, JoinOnDsl};
+use diesel::{JoinOnDsl, dsl::sql, prelude::*, sql_types::BigInt};
 use serde::Deserialize;
 use tracing::error;
 
 use crate::{
     models::{ObjectType, StoredObject},
-    rest::{error::ApiError, State},
+    rest::{State, error::ApiError},
     schema::{expiration_unlock_conditions::dsl::*, objects::dsl::*},
     sync::LATEST_CHECKPOINT_UNIX_TIMESTAMP_MS,
 };
@@ -226,8 +226,8 @@ pub(crate) mod responses {
 #[cfg(test)]
 pub(crate) fn ensure_checkpoint_is_set() {
     use std::sync::{
-        atomic::{AtomicU64, Ordering},
         Once,
+        atomic::{AtomicU64, Ordering},
     };
 
     const DEFAULT_CHECKPOINT_UNIX_TIMESTAMP_MS_FOR_TESTING: u64 = 500_000_000;

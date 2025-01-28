@@ -287,7 +287,7 @@ mod tests {
 
     use super::*;
     use crate::{
-        db::{run_migrations, STARDUST_MIGRATIONS},
+        db::{STARDUST_MIGRATIONS, run_migrations},
         schema::objects::dsl::*,
     };
 

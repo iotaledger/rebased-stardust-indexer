@@ -123,7 +123,7 @@ impl Worker for CheckpointWorker {
         METRICS
             .get()
             .expect("metrics global should be initialized")
-            .last_checkpoint_checked
+            .last_checkpoint_received
             .set(checkpoint.checkpoint_summary.sequence_number as i64);
 
         let mut created_objects = Vec::new();
