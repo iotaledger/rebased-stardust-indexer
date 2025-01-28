@@ -98,24 +98,19 @@ fn stored_objects_to_nft_outputs(
 mod tests {
     use std::sync::Arc;
 
-    use diesel::{RunQueryDsl, insert_into};
-    use iota_types::{balance::Balance, base_types::ObjectID, collection_types::Bag, id::UID};
+    use iota_types::base_types::ObjectID;
     use prometheus::Registry;
     use tracing::Level;
     use tracing_subscriber::FmtSubscriber;
 
     use crate::{
-        db::{ConnectionPool, Name, PoolConnection},
-        models::{ExpirationUnlockCondition, IotaAddress, StoredObject},
+        db::{ConnectionPool, Name},
         rest::{
             routes::{
-                get_free_port_for_testing_only,
+                test_utils::{create_and_insert_nft_output, get_free_port_for_testing_only},
                 v1::{ensure_checkpoint_is_set, nft::NftOutput},
             },
             spawn_rest_server,
-        },
-        schema::{
-            expiration_unlock_conditions::dsl::expiration_unlock_conditions, objects::dsl::*,
         },
     };
 
@@ -391,48 +386,5 @@ mod tests {
         std::fs::remove_file(test_db).unwrap();
 
         Ok(())
-    }
-    fn create_and_insert_nft_output(
-        connection: &mut PoolConnection,
-        owner_address: iota_types::base_types::IotaAddress,
-        balance: u64,
-        unix_time: u32,
-    ) -> Result<iota_types::stardust::output::nft::NftOutput, anyhow::Error> {
-        let nft_object_id = ObjectID::random();
-        let nft_output = iota_types::stardust::output::nft::NftOutput {
-            id: UID::new(nft_object_id),
-            balance: Balance::new(balance),
-            native_tokens: Bag::default(),
-            expiration: Some(
-                iota_types::stardust::output::unlock_conditions::ExpirationUnlockCondition {
-                    owner: owner_address.clone(),
-                    return_address: owner_address.clone(),
-                    unix_time,
-                },
-            ),
-            storage_deposit_return: None,
-            timelock: None,
-        };
-
-        let stored_object = StoredObject::new_nft_for_testing(nft_output.clone())?;
-
-        insert_into(objects)
-            .values(&stored_object)
-            .execute(connection)
-            .unwrap();
-
-        let unlock_condition = ExpirationUnlockCondition {
-            owner: IotaAddress(owner_address.clone()),
-            return_address: IotaAddress(owner_address.clone()),
-            unix_time: unix_time as i64,
-            object_id: IotaAddress(nft_object_id.into()),
-        };
-
-        insert_into(expiration_unlock_conditions)
-            .values(&unlock_condition)
-            .execute(connection)
-            .unwrap();
-
-        Ok(nft_output)
     }
 }
