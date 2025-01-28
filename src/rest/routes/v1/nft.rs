@@ -30,7 +30,7 @@ path = "/v1/nft/{address}",
 description =
     "Fetches NFT outputs for a specified address with optional pagination.
     It returns NFT outputs with expiration unlock conditions that refer to the given address either as the `owner` or as the `return_address`.
-    Results can be paginated by providing optional `page` and `limit` query parameters.",
+    Results can be paginated by providing optional `page` and `page_size` query parameters.",
     responses(
         (status = 200, description = "Successful request", body = NftOutputVec),
         (status = 400, description = "Bad request"),
@@ -41,7 +41,7 @@ description =
     params(
         ("address" = String, Path, description = "The hexadecimal address for which to fetch NFT outputs."),
         ("page" = Option<u32>, Query, description = "Page number for pagination. Defaults to 1."),
-        ("limit" = Option<u32>, Query, description = "Number of items per page for pagination. Defaults to 10.")
+        ("page_size" = Option<u32>, Query, description = "Number of items per page for pagination. Defaults to 10.")
     )
 )]
 async fn nft(
@@ -62,7 +62,7 @@ path = "/v1/nft/resolved/{address}",
 description =
     "Fetches NFT outputs for a specified address, considering the resolved expiration unlock conditions.
     The expiration unlock conditions determine access based on whether the latest checkpoint timestamp is
-    before or after the expiration time. Results can be paginated by providing optional `page` and `limit`
+    before or after the expiration time. Results can be paginated by providing optional `page` and `page_size`
     query parameters.
 
     Before Expiration:
@@ -82,7 +82,7 @@ description =
     params(
         ("address" = String, Path, description = "The hexadecimal address for which to fetch NFT outputs."),
         ("page" = Option<u32>, Query, description = "Page number for pagination. Defaults to 1."),
-        ("limit" = Option<u32>, Query, description = "Number of items per page for pagination. Defaults to 10.")
+        ("page_size" = Option<u32>, Query, description = "Number of items per page for pagination. Defaults to 10.")
     )
 )]
 async fn resolved(
