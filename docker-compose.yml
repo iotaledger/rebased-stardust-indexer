@@ -28,4 +28,3 @@ services:
       --remote-store-url ${REMOTE_STORE_URL}
       --package-id ${PACKAGE_ID}
       --enable-wal
-      --reset-db
