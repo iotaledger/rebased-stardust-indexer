@@ -1,5 +1,5 @@
 use clap::Args;
-use iota_types::{STARDUST_PACKAGE_ID, base_types::ObjectID};
+use iota_types::{base_types::ObjectID, STARDUST_PACKAGE_ID};
 use url::Url;
 
 /// Max queue size of checkpoints for the Indexer to process

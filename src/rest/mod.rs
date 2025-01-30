@@ -3,7 +3,7 @@
 
 use std::net::SocketAddr;
 
-use axum::{Extension, Router, http, response::IntoResponse};
+use axum::{http, response::IntoResponse, Extension, Router};
 use http::Method;
 use tokio::task::JoinHandle;
 use tokio_util::sync::CancellationToken;

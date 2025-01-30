@@ -4,14 +4,14 @@
 //! Database related logic.
 use std::{env, time::Duration};
 
-use anyhow::{Result, anyhow};
+use anyhow::{anyhow, Result};
 use clap::Args;
 use diesel::{
     prelude::*,
     r2d2::{ConnectionManager, Pool, PooledConnection},
     sqlite::Sqlite,
 };
-use diesel_migrations::{EmbeddedMigrations, MigrationHarness, embed_migrations};
+use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
 use dotenvy::dotenv;
 
 pub const STARDUST_MIGRATIONS: EmbeddedMigrations = embed_migrations!("migrations/stardust");

@@ -13,6 +13,7 @@ use diesel::{
     serialize::{IsNull, ToSql},
     sqlite::SqliteValue,
 };
+use iota_types::base_types::ObjectID;
 use num_enum::TryFromPrimitive;
 
 #[derive(Clone, Debug, PartialEq, Eq, Queryable, Selectable, Insertable, AsChangeset)]
@@ -206,6 +207,12 @@ impl TryFrom<StoredObject> for iota_types::stardust::output::nft::NftOutput {
 #[diesel(sql_type = diesel::sql_types::Binary)]
 pub struct IotaAddress(pub iota_types::base_types::IotaAddress);
 
+impl From<ObjectID> for IotaAddress {
+    fn from(id: ObjectID) -> Self {
+        iota_types::base_types::IotaAddress::from(id).into()
+    }
+}
+
 impl ToSql<diesel::sql_types::Binary, diesel::sqlite::Sqlite> for IotaAddress {
     fn to_sql<'b>(
         &'b self,
@@ -280,7 +287,7 @@ mod tests {
 
     use super::*;
     use crate::{
-        db::{STARDUST_MIGRATIONS, run_migrations},
+        db::{run_migrations, STARDUST_MIGRATIONS},
         schema::objects::dsl::*,
     };
 

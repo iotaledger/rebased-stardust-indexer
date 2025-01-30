@@ -5,12 +5,12 @@ use std::{fs, path::Path};
 
 use clap::{Parser, Subcommand};
 use db::{ConnectionPool, ConnectionPoolConfig, Name};
-use tracing::{Level, error, info};
+use tracing::{error, info, Level};
 use tracing_subscriber::FmtSubscriber;
 use utoipa::OpenApi;
 
 use crate::{
-    rest::{ApiDoc, spawn_rest_server},
+    rest::{spawn_rest_server, ApiDoc},
     sync::{Indexer, IndexerConfig},
 };
 
