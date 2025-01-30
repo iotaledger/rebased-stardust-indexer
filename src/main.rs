@@ -5,12 +5,12 @@ use std::{fs, path::Path};
 
 use clap::{Parser, Subcommand};
 use db::{ConnectionPool, ConnectionPoolConfig, Name};
-use tracing::{error, info, Level};
+use tracing::{Level, error, info};
 use tracing_subscriber::FmtSubscriber;
 use utoipa::OpenApi;
 
 use crate::{
-    rest::{spawn_rest_server, ApiDoc},
+    rest::{ApiDoc, spawn_rest_server},
     sync::{Indexer, IndexerConfig},
 };
 
@@ -86,8 +86,10 @@ async fn run_indexer(
 ) -> anyhow::Result<()> {
     init_tracing(log_level);
 
-    let connection_pool = ConnectionPool::new(connection_pool_config.clone(), Name::Objects)?;
-    let progress_store_pool = ConnectionPool::new(connection_pool_config, Name::ProgressStore)?;
+    let connection_pool = ConnectionPool::new(connection_pool_config, Name::Objects)?;
+
+    let progress_store_pool =
+        ConnectionPool::new(ConnectionPoolConfig::default(), Name::ProgressStore)?;
 
     if config.reset_db {
         reset_database(&connection_pool, &progress_store_pool)?;
