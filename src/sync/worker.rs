@@ -2,10 +2,10 @@
 //! can apply filtering logic to store only the desired data if necessary into a
 //! local or remote storage
 
-use std::sync::{atomic::AtomicU64, OnceLock};
+use std::sync::{OnceLock, atomic::AtomicU64};
 
 use axum::async_trait;
-use diesel::{insert_into, Connection, ExpressionMethods, RunQueryDsl};
+use diesel::{Connection, ExpressionMethods, RunQueryDsl, insert_into};
 use iota_data_ingestion_core::Worker;
 use iota_types::{
     base_types::ObjectID,
@@ -44,8 +44,8 @@ impl CheckpointWorker {
     }
 
     /// Check if the `CheckpointTransaction` is a genesis transaction or
-    /// contains input objects belonging to the package ID.
-    fn tx_contains_relevant_objects(
+    /// contains the stardust package.
+    fn tx_touches_stardust_objects(
         &self,
         checkpoint_tx: &CheckpointTransaction,
     ) -> anyhow::Result<bool> {
@@ -108,7 +108,7 @@ impl Worker for CheckpointWorker {
         let mut created_objects = Vec::new();
         let mut deleted_addresses = Vec::new();
         for checkpoint_tx in checkpoint.transactions.into_iter() {
-            if self.tx_contains_relevant_objects(&checkpoint_tx)? {
+            if self.tx_touches_stardust_objects(&checkpoint_tx)? {
                 deleted_addresses.extend(
                     checkpoint_tx
                         .removed_objects_pre_version()
