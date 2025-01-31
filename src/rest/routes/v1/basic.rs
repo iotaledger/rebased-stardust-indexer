@@ -25,8 +25,12 @@ pub(crate) fn router() -> Router {
 
 /// Get the `BasicOutput`s owned by the address
 #[utoipa::path(
-    get,
-    path = "/v1/basic/{address}",
+get,
+path = "/v1/basic/{address}",
+description =
+    "Fetches basic outputs for a specified address with optional pagination.
+    It returns basic outputs with expiration unlock conditions that refer to the given address either as the `owner` or as the `return_address`.
+    Results can be paginated by providing optional `page` and `page_size` query parameters.",
     responses(
         (status = 200, description = "Successful request", body = BasicOutputVec),
         (status = 400, description = "Bad request"),
@@ -35,9 +39,9 @@ pub(crate) fn router() -> Router {
         (status = 403, description = "Forbidden")
     ),
     params(
-        ("address" = String, Path, description = "The hex address to fetch the basic outputs for"),
-        ("page" = Option<u32>, Query, description = "Page number for pagination"),
-        ("limit" = Option<u32>, Query, description = "Number of items per page for pagination")
+        ("address" = String, Path, description = "The hexadecimal address for which to fetch basic outputs."),
+        ("page" = Option<u32>, Query, description = "Page number for pagination. Defaults to 1."),
+        ("page_size" = Option<u32>, Query, description = "Number of items per page for pagination. Defaults to 10.")
     )
 )]
 async fn basic(
@@ -54,8 +58,21 @@ async fn basic(
 /// Get the `BasicOutput`s owned by the address considering resolved expiration
 /// unlock condition.
 #[utoipa::path(
-    get,
-    path = "/v1/basic/resolved/{address}",
+get,
+path = "/v1/basic/resolved/{address}",
+description =
+    "Fetches basic outputs for a specified address, considering the resolved expiration unlock conditions.
+    The expiration unlock conditions determine access based on whether the latest checkpoint timestamp is
+    before or after the expiration time. Results can be paginated by providing optional `page` and `page_size`
+    query parameters.
+
+    Before Expiration:
+    Objects are accessible to the `owner` if the latest checkpoint UNIX timestamp (in milliseconds)
+    is `less than` the expiration time.
+
+    After Expiration:
+    Objects become accessible to the `return_address` if the latest checkpoint UNIX timestamp (in milliseconds)
+    is `greater than or equal to` the expiration time.",
     responses(
         (status = 200, description = "Successful request", body = BasicOutputVec),
         (status = 400, description = "Bad request"),
@@ -64,9 +81,9 @@ async fn basic(
         (status = 403, description = "Forbidden")
     ),
     params(
-        ("address" = String, Path, description = "The hex address to fetch the basic outputs for"),
-        ("page" = Option<u32>, Query, description = "Page number for pagination"),
-        ("limit" = Option<u32>, Query, description = "Number of items per page for pagination")
+        ("address" = String, Path, description = "The hexadecimal address for which to fetch basic outputs."),
+        ("page" = Option<u32>, Query, description = "Page number for pagination. Defaults to 1."),
+        ("page_size" = Option<u32>, Query, description = "Number of items per page for pagination. Defaults to 10.")
     )
 )]
 async fn resolved(

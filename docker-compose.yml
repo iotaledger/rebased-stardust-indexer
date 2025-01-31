@@ -28,4 +28,5 @@ services:
       --checkpoint-processing-batch-data-limit ${CHECKPOINT_PROCESSING_BATCH_DATA_LIMIT}
       --remote-store-url ${REMOTE_STORE_URL}
       --package-id ${PACKAGE_ID}
+      --enable-wal
       --metrics-address ${METRICS_SOCKET_ADDRESS}

@@ -7,6 +7,7 @@ use std::{env, time::Duration};
 use anyhow::{Result, anyhow};
 use clap::Args;
 use diesel::{
+    connection::SimpleConnection,
     prelude::*,
     r2d2::{ConnectionManager, Pool, PooledConnection},
     sqlite::Sqlite,
@@ -27,6 +28,9 @@ pub struct ConnectionPoolConfig {
     #[arg(long, value_parser = parse_duration, default_value = "30")]
     #[arg(env = "DB_CONNECTION_TIMEOUT_SECS")]
     pub connection_timeout_secs: Duration,
+    /// Enable WAL mode in the database.
+    #[arg(long)]
+    pub enable_wal: bool,
 }
 
 fn parse_duration(arg: &str) -> Result<std::time::Duration, std::num::ParseIntError> {
@@ -53,7 +57,32 @@ impl Default for ConnectionPoolConfig {
         Self {
             pool_size: Self::DEFAULT_POOL_SIZE,
             connection_timeout_secs: Duration::from_secs(Self::DEFAULT_CONNECTION_TIMEOUT_SECS),
+            enable_wal: false,
         }
+    }
+}
+
+/// Configure custom PRAGMA statements.
+///
+/// Adapted from: https://stackoverflow.com/a/57717533
+///
+/// See more in: https://www.sqlite.org/pragma.html
+impl diesel::r2d2::CustomizeConnection<SqliteConnection, diesel::r2d2::Error>
+    for ConnectionPoolConfig
+{
+    fn on_acquire(&self, conn: &mut SqliteConnection) -> Result<(), diesel::r2d2::Error> {
+        (|| {
+            conn.batch_execute("PRAGMA foreign_keys = ON;")?;
+            conn.batch_execute(&format!(
+                "PRAGMA busy_timeout = {};",
+                self.connection_timeout_secs.as_millis()
+            ))?;
+            if self.enable_wal {
+                conn.batch_execute("PRAGMA journal_mode = WAL; PRAGMA synchronous = NORMAL;")?;
+            }
+            Ok(())
+        })()
+        .map_err(diesel::r2d2::Error::QueryError)
     }
 }
 
@@ -101,6 +130,7 @@ impl ConnectionPool {
             pool: Pool::builder()
                 .max_size(pool_config.pool_size)
                 .connection_timeout(pool_config.connection_timeout_secs)
+                .connection_customizer(Box::new(pool_config))
                 .build(manager)
                 .map_err(|e| {
                     anyhow!("failed to initialize connection pool for {db_url} with error: {e:?}")
