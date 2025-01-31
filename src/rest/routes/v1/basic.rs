@@ -1,19 +1,20 @@
 // Copyright (c) 2024 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-use axum::{Extension, Router, extract::Query, routing::get};
+use axum::{extract::Query, routing::get, Extension, Router};
 use tracing::error;
 
 use crate::{
     models::{ObjectType, StoredObject},
     rest::{
-        State,
         error::ApiError,
         extractors::Path,
         routes::v1::{
-            PaginationParams, fetch_stored_objects,
+            fetch_stored_objects,
             responses::{BasicOutput, BasicOutputVec},
+            PaginationParams,
         },
+        State,
     },
 };
 
@@ -115,7 +116,7 @@ fn stored_objects_to_basic_outputs(
 #[cfg(test)]
 mod tests {
 
-    use diesel::{RunQueryDsl, insert_into};
+    use diesel::{insert_into, RunQueryDsl};
     use iota_types::{balance::Balance, base_types::ObjectID, collection_types::Bag, id::UID};
     use tokio_util::sync::CancellationToken;
     use tracing::Level;

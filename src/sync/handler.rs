@@ -9,7 +9,7 @@ use tokio::{sync::oneshot, task::JoinHandle};
 
 use crate::{
     db::ConnectionPool,
-    sync::{IndexerConfig, progress_store::SqliteProgressStore, worker::CheckpointWorker},
+    sync::{progress_store::SqliteProgressStore, worker::CheckpointWorker, IndexerConfig},
 };
 
 type ExecutorProgress = HashMap<String, CheckpointSequenceNumber>;

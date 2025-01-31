@@ -5,7 +5,7 @@
 use std::sync::{OnceLock, atomic::AtomicU64};
 
 use axum::async_trait;
-use diesel::{Connection, RunQueryDsl, insert_into};
+use diesel::{Connection, ExpressionMethods, RunQueryDsl, insert_into};
 use iota_data_ingestion_core::Worker;
 use iota_types::{
     base_types::ObjectID,
@@ -15,7 +15,7 @@ use iota_types::{
 
 use crate::{
     db::ConnectionPool,
-    models::{ExpirationUnlockCondition, StoredObject},
+    models::{ExpirationUnlockCondition, IotaAddress, StoredObject},
     schema::{expiration_unlock_conditions::dsl::*, objects::dsl::*},
 };
 
@@ -44,8 +44,8 @@ impl CheckpointWorker {
     }
 
     /// Check if the `CheckpointTransaction` is a genesis transaction or
-    /// contains input objects belonging to the package ID.
-    fn tx_contains_relevant_objects(
+    /// contains the stardust package.
+    fn tx_touches_stardust_objects(
         &self,
         checkpoint_tx: &CheckpointTransaction,
     ) -> anyhow::Result<bool> {
@@ -92,15 +92,29 @@ impl CheckpointWorker {
 
         Ok(())
     }
+
+    fn delete_objects(&self, addresses: Vec<IotaAddress>) -> anyhow::Result<()> {
+        let mut conn = self.pool.get_connection()?;
+        diesel::delete(objects)
+            .filter(id.eq_any(addresses))
+            .execute(&mut conn)?;
+        Ok(())
+    }
 }
 
 #[async_trait]
 impl Worker for CheckpointWorker {
     async fn process_checkpoint(&self, checkpoint: CheckpointData) -> anyhow::Result<()> {
-        let mut stored_objects = Vec::new();
+        let mut created_objects = Vec::new();
+        let mut deleted_addresses = Vec::new();
         for checkpoint_tx in checkpoint.transactions.into_iter() {
-            if self.tx_contains_relevant_objects(&checkpoint_tx)? {
-                stored_objects.extend(
+            if self.tx_touches_stardust_objects(&checkpoint_tx)? {
+                deleted_addresses.extend(
+                    checkpoint_tx
+                        .removed_objects_pre_version()
+                        .filter_map(|obj| obj.is_shared().then_some(IotaAddress::from(obj.id()))),
+                );
+                created_objects.extend(
                     checkpoint_tx
                         .output_objects
                         .into_iter()
@@ -116,8 +130,12 @@ impl Worker for CheckpointWorker {
             .get_or_init(|| AtomicU64::new(0))
             .store(checkpoint_timestamp, std::sync::atomic::Ordering::SeqCst);
 
-        if !stored_objects.is_empty() {
-            self.multi_insert_as_database_transactions(stored_objects)?;
+        if !created_objects.is_empty() {
+            self.multi_insert_as_database_transactions(created_objects)?;
+        }
+
+        if !deleted_addresses.is_empty() {
+            self.delete_objects(deleted_addresses)?;
         }
 
         Ok(())
