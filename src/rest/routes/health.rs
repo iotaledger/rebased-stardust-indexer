@@ -68,6 +68,7 @@ impl_into_response!(HealthResponse);
 
 #[cfg(test)]
 mod tests {
+    use std::{fs, path::Path};
 
     use iota_types::base_types::ObjectID;
     use tokio_util::sync::CancellationToken;
@@ -98,7 +99,12 @@ mod tests {
 
         let _ = tracing::subscriber::set_default(subscriber);
 
-        let test_db = "health_endpoint_test.db";
+        let test_db = "test_health_endpoint.db";
+
+        if Path::new(test_db).exists() {
+            fs::remove_file(test_db).unwrap();
+        }
+
         let pool =
             ConnectionPool::new_with_url(test_db, Default::default(), Name::Objects).unwrap();
         pool.run_migrations().unwrap();

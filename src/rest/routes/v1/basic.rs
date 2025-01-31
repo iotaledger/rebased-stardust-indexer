@@ -114,6 +114,7 @@ fn stored_objects_to_basic_outputs(
 
 #[cfg(test)]
 mod tests {
+    use std::path::Path;
 
     use iota_types::base_types::ObjectID;
     use tokio_util::sync::CancellationToken;
@@ -140,6 +141,11 @@ mod tests {
         let _ = tracing::subscriber::set_default(subscriber);
 
         let test_db = "stored_basic_object_address_filter_test.db";
+
+        if Path::new(test_db).exists() {
+            std::fs::remove_file(test_db).unwrap();
+        }
+
         let pool =
             ConnectionPool::new_with_url(test_db, Default::default(), Name::Objects).unwrap();
         pool.run_migrations().unwrap();
@@ -234,6 +240,11 @@ mod tests {
         let _ = tracing::subscriber::set_default(sub);
 
         let test_db = "stored_basic_object_address_filter_resolved_test.db";
+
+        if Path::new(test_db).exists() {
+            std::fs::remove_file(test_db).unwrap();
+        }
+
         let pool =
             ConnectionPool::new_with_url(test_db, Default::default(), Name::Objects).unwrap();
         pool.run_migrations().unwrap();
@@ -313,6 +324,11 @@ mod tests {
         let _ = tracing::subscriber::set_default(subscriber);
 
         let test_db = "stored_pagination_test.db";
+
+        if Path::new(test_db).exists() {
+            std::fs::remove_file(test_db).unwrap();
+        }
+
         let pool =
             ConnectionPool::new_with_url(test_db, Default::default(), Name::Objects).unwrap();
         pool.run_migrations().unwrap();
