@@ -32,10 +32,11 @@ docker compose down
 The application uses a pre-existing `.env` file for configuration. You can modify it if needed.
 
 #### Basic Configuration
-- **`OBJECTS_DB_URL`**: The SQLite database URL. Used to store Migrations Objects
-- **`PROGRESS_STORE_DB_URL`**: The SQLite database URL. Used to store latest synced checkpoints
+- **`OBJECTS_DB_URL`**: The SQLite database URL. Used to store Migrations Objects.
+- **`PROGRESS_STORE_DB_URL`**: The SQLite database URL. Used to store latest synced checkpoints.
 - **`REMOTE_STORE_URL`**: The fullnode REST API URL used to fetch checkpoint data and synchronize.
 - **`REST_API_SOCKET_ADDRESS`**: Address where the REST API will listen (e.g., `0.0.0.0:3000`).
+- **`METRICS_SOCKET_ADDRESS`**: Address where the Prometheus metrics will be exposed (e.g., `0.0.0.0:3001`).
 
 #### Refined Configuration
 - **`LOG_LEVEL`**: Logging level (e.g., `INFO`, `DEBUG`).

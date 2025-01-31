@@ -190,11 +190,18 @@ pub fn revert_all_migrations(
 
 #[cfg(test)]
 mod tests {
+    use std::path::Path;
+
     use super::*;
 
     #[test]
     fn run_objects_migrations_with_pool() {
         let test_db = "run_objects_migrations_with_pool.db";
+
+        if Path::new(test_db).exists() {
+            std::fs::remove_file(test_db).unwrap();
+        }
+
         let pool =
             ConnectionPool::new_with_url(test_db, Default::default(), Name::Objects).unwrap();
         pool.run_migrations().unwrap();
@@ -206,6 +213,11 @@ mod tests {
     #[test]
     fn run_progress_store_migrations_with_pool() {
         let test_db = "run_progress_store_migrations_with_pool.db";
+
+        if Path::new(test_db).exists() {
+            std::fs::remove_file(test_db).unwrap();
+        }
+
         let pool =
             ConnectionPool::new_with_url(test_db, Default::default(), Name::ProgressStore).unwrap();
         pool.run_migrations().unwrap();

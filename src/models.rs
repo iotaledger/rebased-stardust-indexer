@@ -283,11 +283,13 @@ pub struct LastCheckpointSync {
 
 #[cfg(test)]
 mod tests {
+    use std::path::Path;
+
     use diesel::insert_into;
 
     use super::*;
     use crate::{
-        db::{run_migrations, STARDUST_MIGRATIONS},
+        db::{STARDUST_MIGRATIONS, run_migrations},
         schema::objects::dsl::*,
     };
 
@@ -298,6 +300,11 @@ mod tests {
             StoredObject::new_dummy_for_testing(),
         ];
         let test_db = "stored_object_round_trip.db";
+
+        if Path::new(test_db).exists() {
+            std::fs::remove_file(test_db).unwrap();
+        }
+
         let mut connection = SqliteConnection::establish(test_db).unwrap();
         run_migrations(&mut connection, STARDUST_MIGRATIONS).unwrap();
 

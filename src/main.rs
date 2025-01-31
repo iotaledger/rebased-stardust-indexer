@@ -15,6 +15,7 @@ use crate::{
 };
 
 mod db;
+mod metrics;
 mod models;
 mod rest;
 mod schema;

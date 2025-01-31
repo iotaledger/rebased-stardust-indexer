@@ -14,6 +14,34 @@
     }
   ],
   "paths": {
+    "/health": {
+      "get": {
+        "tags": [
+          "routes::health"
+        ],
+        "summary": "Retrieve the health of the service.",
+        "description": "Retrieve the health of the service. It returns total object count, basic object count, and NFT object count.",
+        "operationId": "health",
+        "responses": {
+          "200": {
+            "description": "Successful request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error"
+          },
+          "503": {
+            "description": "Service unavailable"
+          }
+        }
+      }
+    },
     "/v1/basic/resolved/{address}": {
       "get": {
         "tags": [
@@ -416,6 +444,28 @@
             "type": "integer",
             "format": "int64",
             "minimum": 0
+          }
+        }
+      },
+      "HealthResponse": {
+        "type": "object",
+        "required": [
+          "objects_count",
+          "basic_objects_count",
+          "nft_objects_count"
+        ],
+        "properties": {
+          "basic_objects_count": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "nft_objects_count": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "objects_count": {
+            "type": "integer",
+            "format": "int64"
           }
         }
       },

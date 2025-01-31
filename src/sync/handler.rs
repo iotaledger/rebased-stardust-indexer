@@ -4,12 +4,13 @@ use std::collections::HashMap;
 
 use iota_data_ingestion_core::{DataIngestionMetrics, IndexerExecutor, ReaderOptions, WorkerPool};
 use iota_types::messages_checkpoint::CheckpointSequenceNumber;
-use prometheus::Registry;
 use tokio::{sync::oneshot, task::JoinHandle};
+use tokio_util::sync::CancellationToken;
 
 use crate::{
     db::ConnectionPool,
-    sync::{progress_store::SqliteProgressStore, worker::CheckpointWorker, IndexerConfig},
+    metrics::spawn_prometheus_server,
+    sync::{IndexerConfig, progress_store::SqliteProgressStore, worker::CheckpointWorker},
 };
 
 type ExecutorProgress = HashMap<String, CheckpointSequenceNumber>;
@@ -26,6 +27,8 @@ pub struct Indexer {
     // https://github.com/iotaledger/iota/issues/4383
     shutdown_tx: oneshot::Sender<()>,
     handle: JoinHandle<anyhow::Result<ExecutorProgress>>,
+    prometheus_handle: JoinHandle<anyhow::Result<()>>,
+    prom_cancel_token: CancellationToken,
 }
 
 impl Indexer {
@@ -35,6 +38,13 @@ impl Indexer {
         pool_progress_store: ConnectionPool,
         indexer_config: Box<IndexerConfig>,
     ) -> Result<Self, anyhow::Error> {
+        // Set up the Prometheus metrics service
+        let prom_cancel_token = CancellationToken::new();
+        let (registry, prom_handle) = spawn_prometheus_server(
+            indexer_config.metrics_address.clone(),
+            prom_cancel_token.clone(),
+        )?;
+
         // Notify the IndexerExecutor to gracefully shutdown
         // NOTE: this will be replaced by a CancellationToken once this issue will be
         // resolved: https://github.com/iotaledger/iota/issues/4383
@@ -49,7 +59,7 @@ impl Indexer {
             // the hood is to calculate the channel capacity by this formula `number_of_jobs *
             // MAX_CHECKPOINTS_IN_PROGRESS`, where MAX_CHECKPOINTS_IN_PROGRESS = 10000
             1,
-            DataIngestionMetrics::new(&Registry::default()),
+            DataIngestionMetrics::new(&registry),
         );
 
         // Register the CheckpointWorker which will handle the CheckpointData once
@@ -79,6 +89,8 @@ impl Indexer {
         Ok(Self {
             shutdown_tx: exit_sender,
             handle,
+            prometheus_handle: prom_handle,
+            prom_cancel_token,
         })
     }
 
@@ -88,8 +100,12 @@ impl Indexer {
     pub async fn graceful_shutdown(self) -> anyhow::Result<()> {
         tracing::info!("Received shutdown Signal");
         _ = self.shutdown_tx.send(());
+        self.prom_cancel_token.cancel();
         tracing::info!("Wait for task to shutdown");
         self.handle
+            .await?
+            .inspect(|_| tracing::info!("Task shutdown successfully"))?;
+        self.prometheus_handle
             .await?
             .inspect(|_| tracing::info!("Task shutdown successfully"))?;
 

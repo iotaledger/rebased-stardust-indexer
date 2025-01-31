@@ -3,7 +3,7 @@
 
 use std::net::SocketAddr;
 
-use axum::{http, response::IntoResponse, Extension, Router};
+use axum::{Extension, Router, http, response::IntoResponse};
 use http::Method;
 use tokio::task::JoinHandle;
 use tokio_util::sync::CancellationToken;
@@ -18,11 +18,12 @@ use crate::{
 
 mod error;
 mod extractors;
-mod routes;
+pub(crate) mod routes;
 
 #[derive(OpenApi)]
 #[openapi(
     paths(
+        routes::health::health,
         routes::v1::basic::basic,
         routes::v1::basic::resolved,
         routes::v1::nft::nft,

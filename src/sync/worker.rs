@@ -15,7 +15,8 @@ use iota_types::{
 
 use crate::{
     db::ConnectionPool,
-    models::{ExpirationUnlockCondition, IotaAddress, StoredObject},
+    metrics::METRICS,
+    models::{ExpirationUnlockCondition, IotaAddress, ObjectType, StoredObject},
     schema::{expiration_unlock_conditions::dsl::*, objects::dsl::*},
 };
 
@@ -69,6 +70,8 @@ impl CheckpointWorker {
     ) -> anyhow::Result<()> {
         let mut pool = self.pool.get_connection()?;
         for stored_object in stored_objects {
+            let type_ = stored_object.object_type;
+
             pool.transaction::<_, anyhow::Error, _>(|conn| {
                 insert_into(objects)
                     .values(&stored_object)
@@ -88,6 +91,19 @@ impl CheckpointWorker {
 
                 Ok(())
             })?;
+
+            match type_ {
+                ObjectType::Basic => METRICS
+                    .get()
+                    .expect("global should be initialized")
+                    .indexed_basic_outputs_count
+                    .inc(),
+                ObjectType::Nft => METRICS
+                    .get()
+                    .expect("global should be initialized")
+                    .indexed_nft_outputs_count
+                    .inc(),
+            }
         }
 
         Ok(())
@@ -105,6 +121,12 @@ impl CheckpointWorker {
 #[async_trait]
 impl Worker for CheckpointWorker {
     async fn process_checkpoint(&self, checkpoint: CheckpointData) -> anyhow::Result<()> {
+        METRICS
+            .get()
+            .expect("metrics global should be initialized")
+            .last_checkpoint_received
+            .set(checkpoint.checkpoint_summary.sequence_number as i64);
+
         let mut created_objects = Vec::new();
         let mut deleted_addresses = Vec::new();
         for checkpoint_tx in checkpoint.transactions.into_iter() {
@@ -137,6 +159,12 @@ impl Worker for CheckpointWorker {
         if !deleted_addresses.is_empty() {
             self.delete_objects(deleted_addresses)?;
         }
+
+        METRICS
+            .get()
+            .expect("metrics global should be initialized")
+            .last_checkpoint_indexed
+            .set(checkpoint.checkpoint_summary.sequence_number as i64);
 
         Ok(())
     }
