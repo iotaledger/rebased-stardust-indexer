@@ -70,6 +70,8 @@ impl CheckpointWorker {
     ) -> anyhow::Result<()> {
         let mut pool = self.pool.get_connection()?;
         for stored_object in stored_objects {
+            let type_ = stored_object.object_type;
+
             pool.transaction::<_, anyhow::Error, _>(|conn| {
                 insert_into(objects)
                     .values(&stored_object)
@@ -78,7 +80,6 @@ impl CheckpointWorker {
                     .set(&stored_object)
                     .execute(conn)?;
 
-                let type_ = stored_object.object_type;
                 let eu = ExpirationUnlockCondition::try_from(stored_object)?;
 
                 insert_into(expiration_unlock_conditions)
@@ -88,21 +89,21 @@ impl CheckpointWorker {
                     .set(&eu)
                     .execute(conn)?;
 
-                match type_ {
-                    ObjectType::Basic => METRICS
-                        .get()
-                        .expect("global should be initialized")
-                        .indexed_basic_outputs_count
-                        .inc(),
-                    ObjectType::Nft => METRICS
-                        .get()
-                        .expect("global should be initialized")
-                        .indexed_nft_outputs_count
-                        .inc(),
-                }
-
                 Ok(())
             })?;
+
+            match type_ {
+                ObjectType::Basic => METRICS
+                    .get()
+                    .expect("global should be initialized")
+                    .indexed_basic_outputs_count
+                    .inc(),
+                ObjectType::Nft => METRICS
+                    .get()
+                    .expect("global should be initialized")
+                    .indexed_nft_outputs_count
+                    .inc(),
+            }
         }
 
         Ok(())
