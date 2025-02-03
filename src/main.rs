@@ -5,6 +5,7 @@ use std::{fs, path::Path};
 
 use clap::{Parser, Subcommand};
 use db::{ConnectionPool, ConnectionPoolConfig, Name};
+use tokio::signal::unix::{SignalKind, signal};
 use tracing::{Level, error, info};
 use tracing_subscriber::FmtSubscriber;
 use utoipa::OpenApi;
@@ -161,11 +162,19 @@ fn setup_shutdown_signal(indexer_handle: Indexer) -> CancellationToken {
     let token = CancellationToken::new();
     let cloned_token = token.clone();
 
-    tokio::spawn(async move {
-        tokio::signal::ctrl_c()
-            .await
-            .expect("failed to listen for CTRL+C");
-        info!("CTRL+C received, shutting down.");
+    tokio::task::spawn(async move {
+        let mut sigint = signal(SignalKind::interrupt()).expect("failed to listen for SIGINT");
+        let mut sigterm = signal(SignalKind::terminate()).expect("failed to listen for SIGTERM");
+
+        tokio::select! {
+            _ = sigint.recv() => {
+                info!("SIGINT received, shutting down.");
+            }
+            _ = sigterm.recv() => {
+                info!("SIGTERM received, shutting down.");
+            }
+        }
+
         cloned_token.cancel();
         indexer_handle.graceful_shutdown().await
     });
