@@ -1,3 +1,6 @@
+// Copyright (c) 2024 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 //! Checkpoint syncing Handlers for the Indexer
 
 use std::collections::HashMap;

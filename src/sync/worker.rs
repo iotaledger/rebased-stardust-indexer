@@ -1,3 +1,6 @@
+// Copyright (c) 2024 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 //! Workers are responsible for syncing data from Fullnode into the Indexer, It
 //! can apply filtering logic to store only the desired data if necessary into a
 //! local or remote storage
