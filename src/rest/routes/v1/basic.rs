@@ -194,8 +194,7 @@ mod tests {
         // Fetch objects for `owner_address`
         let resp = reqwest::get(format!(
             "http://127.0.0.1:{}/v1/basic/{}",
-            bind_port,
-            owner_address
+            bind_port, owner_address
         ))
         .await?;
 
@@ -209,8 +208,7 @@ mod tests {
         // Fetch objects for `other_address`
         let resp = reqwest::get(format!(
             "http://127.0.0.1:{}/v1/basic/{}",
-            bind_port,
-            other_address
+            bind_port, other_address
         ))
         .await?;
 
@@ -258,8 +256,7 @@ mod tests {
         let mut unexpired = vec![];
         let big_ts = 999_999_999;
         for i in 0..3 {
-            let out =
-                create_and_insert_basic_output(&mut conn, owner_addr, 100 + i, big_ts)?;
+            let out = create_and_insert_basic_output(&mut conn, owner_addr, 100 + i, big_ts)?;
             unexpired.push(BasicOutput::from(out));
         }
 
@@ -267,8 +264,7 @@ mod tests {
         let mut expired = vec![];
         let small_ts = 100;
         for i in 0..2 {
-            let out =
-                create_and_insert_basic_output(&mut conn, return_addr, 200 + i, small_ts)?;
+            let out = create_and_insert_basic_output(&mut conn, return_addr, 200 + i, small_ts)?;
             expired.push(BasicOutput::from(out));
         }
 
@@ -367,10 +363,7 @@ mod tests {
         let page_size = 5;
         let resp = reqwest::get(format!(
             "http://127.0.0.1:{}/v1/basic/{}?page={}&page_size={}",
-            bind_port,
-            owner_address,
-            page,
-            page_size
+            bind_port, owner_address, page, page_size
         ))
         .await?;
 
@@ -382,10 +375,7 @@ mod tests {
         let page = 2;
         let resp = reqwest::get(format!(
             "http://127.0.0.1:{}/v1/basic/{}?page={}&page_size={}",
-            bind_port,
-            owner_address,
-            page,
-            page_size
+            bind_port, owner_address, page, page_size
         ))
         .await?;
 
@@ -397,10 +387,7 @@ mod tests {
         let page = 3;
         let resp = reqwest::get(format!(
             "http://127.0.0.1:{}/v1/basic/{}?page={}&page_size={}",
-            bind_port,
-            owner_address,
-            page,
-            page_size
+            bind_port, owner_address, page, page_size
         ))
         .await?;
 

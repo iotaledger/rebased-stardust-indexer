@@ -40,10 +40,8 @@ impl Indexer {
     ) -> Result<Self, anyhow::Error> {
         // Set up the Prometheus metrics service
         let prom_cancel_token = CancellationToken::new();
-        let (registry, prom_handle) = spawn_prometheus_server(
-            indexer_config.metrics_address,
-            prom_cancel_token.clone(),
-        )?;
+        let (registry, prom_handle) =
+            spawn_prometheus_server(indexer_config.metrics_address, prom_cancel_token.clone())?;
 
         // Notify the IndexerExecutor to gracefully shutdown
         // NOTE: this will be replaced by a CancellationToken once this issue will be
