@@ -84,9 +84,9 @@ allow = [
     "LicenseRef-ring",
     "Unlicense",
     "BSL-1.0",
-    "Unicode-DFS-2016",
     "OpenSSL",
     "Unicode-3.0",
+    "Zlib"
     # "Apache-2.0 WITH LLVM-exception",
 ]
 # The confidence threshold for detecting a license from license text.
@@ -209,7 +209,6 @@ skip = [
 skip-tree = [
     { name = "anemo", version = "=0.0" },
     { name = "iota-sdk" },
-    { name = "owo-colors", version = "=3.5" },
     # { name = "ansi_term", version = "=0.11.0", depth = 20 },
 ]
 
@@ -228,15 +227,14 @@ unknown-git = "warn"
 allow-registry = ["https://github.com/rust-lang/crates.io-index"]
 # List of URLs for allowed Git repositories
 allow-git = [
+    "https://https://github.com/iotaledger/iota.git",
     "https://github.com/iotaledger/iota-sim.git",
     "https://github.com/MystenLabs/fastcrypto.git",
     "https://github.com/mystenlabs/anemo.git",
     "https://github.com/iotaledger/tokio-madsim-fork.git",
-    "https://github.com/nextest-rs/datatest-stable.git",
     "https://github.com/zhiburt/tabled.git",
     "https://github.com/iotaledger/iota-rust-sdk.git",
     "https://github.com/bmwill/openapiv3.git",
-    "https://github.com/bmwill/axum-server.git",
 ]
 
 [sources.allow-org]
