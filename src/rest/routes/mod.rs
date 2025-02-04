@@ -59,8 +59,8 @@ pub(crate) mod test_utils {
             timelock: None,
             expiration: Some(
                 iota_types::stardust::output::unlock_conditions::ExpirationUnlockCondition {
-                    owner: owner_address.clone(),
-                    return_address: owner_address.clone(),
+                    owner: owner_address,
+                    return_address: owner_address,
                     unix_time,
                 },
             ),
@@ -77,8 +77,8 @@ pub(crate) mod test_utils {
             .unwrap();
 
         let unlock_condition = ExpirationUnlockCondition {
-            owner: IotaAddress(owner_address.clone()),
-            return_address: IotaAddress(owner_address.clone()),
+            owner: IotaAddress(owner_address),
+            return_address: IotaAddress(owner_address),
             unix_time: unix_time as i64,
             object_id: IotaAddress(basic_object_id.into()),
         };
@@ -105,8 +105,8 @@ pub(crate) mod test_utils {
             native_tokens: Bag::default(),
             expiration: Some(
                 iota_types::stardust::output::unlock_conditions::ExpirationUnlockCondition {
-                    owner: owner_address.clone(),
-                    return_address: owner_address.clone(),
+                    owner: owner_address,
+                    return_address: owner_address,
                     unix_time,
                 },
             ),
@@ -122,8 +122,8 @@ pub(crate) mod test_utils {
             .unwrap();
 
         let unlock_condition = ExpirationUnlockCondition {
-            owner: IotaAddress(owner_address.clone()),
-            return_address: IotaAddress(owner_address.clone()),
+            owner: IotaAddress(owner_address),
+            return_address: IotaAddress(owner_address),
             unix_time: unix_time as i64,
             object_id: IotaAddress(nft_object_id.into()),
         };

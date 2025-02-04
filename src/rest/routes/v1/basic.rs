@@ -160,7 +160,7 @@ mod tests {
         for i in 0..2 {
             let basic_output = create_and_insert_basic_output(
                 &mut connection,
-                owner_address.clone(),
+                owner_address,
                 100 + i,
                 100 + i as u32,
             )?;
@@ -172,7 +172,7 @@ mod tests {
         for i in 0..5 {
             let _ = create_and_insert_basic_output(
                 &mut connection,
-                other_address.clone(),
+                other_address,
                 200 + i,
                 200 + i as u32,
             )?;
@@ -195,7 +195,7 @@ mod tests {
         let resp = reqwest::get(format!(
             "http://127.0.0.1:{}/v1/basic/{}",
             bind_port,
-            owner_address.to_string()
+            owner_address
         ))
         .await?;
 
@@ -210,7 +210,7 @@ mod tests {
         let resp = reqwest::get(format!(
             "http://127.0.0.1:{}/v1/basic/{}",
             bind_port,
-            other_address.to_string()
+            other_address
         ))
         .await?;
 
@@ -259,7 +259,7 @@ mod tests {
         let big_ts = 999_999_999;
         for i in 0..3 {
             let out =
-                create_and_insert_basic_output(&mut conn, owner_addr.clone(), 100 + i, big_ts)?;
+                create_and_insert_basic_output(&mut conn, owner_addr, 100 + i, big_ts)?;
             unexpired.push(BasicOutput::from(out));
         }
 
@@ -268,14 +268,14 @@ mod tests {
         let small_ts = 100;
         for i in 0..2 {
             let out =
-                create_and_insert_basic_output(&mut conn, return_addr.clone(), 200 + i, small_ts)?;
+                create_and_insert_basic_output(&mut conn, return_addr, 200 + i, small_ts)?;
             expired.push(BasicOutput::from(out));
         }
 
         // irrelevant outputs
         let third_addr: iota_types::base_types::IotaAddress = ObjectID::random().into();
         for i in 0..3 {
-            let _ = create_and_insert_basic_output(&mut conn, third_addr.clone(), 300 + i, big_ts)?;
+            let _ = create_and_insert_basic_output(&mut conn, third_addr, 300 + i, big_ts)?;
         }
 
         drop(conn);
@@ -341,7 +341,7 @@ mod tests {
         for i in 0..15 {
             let basic_output = create_and_insert_basic_output(
                 &mut connection,
-                owner_address.clone(),
+                owner_address,
                 100 + i,
                 100 + i as u32,
             )?;
@@ -368,7 +368,7 @@ mod tests {
         let resp = reqwest::get(format!(
             "http://127.0.0.1:{}/v1/basic/{}?page={}&page_size={}",
             bind_port,
-            owner_address.to_string(),
+            owner_address,
             page,
             page_size
         ))
@@ -383,7 +383,7 @@ mod tests {
         let resp = reqwest::get(format!(
             "http://127.0.0.1:{}/v1/basic/{}?page={}&page_size={}",
             bind_port,
-            owner_address.to_string(),
+            owner_address,
             page,
             page_size
         ))
@@ -398,7 +398,7 @@ mod tests {
         let resp = reqwest::get(format!(
             "http://127.0.0.1:{}/v1/basic/{}?page={}&page_size={}",
             bind_port,
-            owner_address.to_string(),
+            owner_address,
             page,
             page_size
         ))

@@ -117,7 +117,7 @@ mod tests {
         for i in 0..3 {
             let _ = create_and_insert_basic_output(
                 &mut connection,
-                owner_address.clone(),
+                owner_address,
                 100 + i,
                 100 + i as u32,
             )?;
@@ -127,7 +127,7 @@ mod tests {
         for i in 0..2 {
             let _ = create_and_insert_nft_output(
                 &mut connection,
-                owner_address.clone(),
+                owner_address,
                 200 + i,
                 200 + i as u32,
             )?;
