@@ -41,4 +41,4 @@ utoipa-swagger-ui = { version = "8.0.3", features = ["axum"] }
 iota-types = { git = "https://github.com/iotaledger/iota.git", tag = "v0.7.3-rc", version = "0.7.3-rc", features = [
     "test-utils",
 ] }
-reqwest = "0.12.9"
+reqwest = "0.12.12"
