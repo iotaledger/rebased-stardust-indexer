@@ -1,3 +1,6 @@
+// Copyright (c) 2024 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 //! The progress store is responsible for indicating the last synced checkpoint
 //! when the Indexer restarts or crashes
 //!

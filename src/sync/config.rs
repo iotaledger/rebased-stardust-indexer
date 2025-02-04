@@ -1,3 +1,6 @@
+// Copyright (c) 2024 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 use clap::Args;
 use iota_types::{STARDUST_PACKAGE_ID, base_types::ObjectID};
 use url::Url;

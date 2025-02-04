@@ -1,3 +1,5 @@
+// Copyright (c) 2024 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
 // @generated automatically by Diesel CLI.
 
 diesel::table! {
