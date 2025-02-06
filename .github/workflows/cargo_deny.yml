@@ -1,0 +1,30 @@
+name: Cargo Deny
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: cargo-deny-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  bans-licenses-sources:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@eef61447b9ff4aafe5dcd4e0bbf5d482be7e7871 # v4.2.1
+      - name: Install Cargo Deny
+        run: cargo install cargo-deny
+      - name: Run Cargo Deny (bans, licenses, sources)
+        run: cargo deny --manifest-path ./Cargo.toml check bans licenses sources
+
+  advisories:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@eef61447b9ff4aafe5dcd4e0bbf5d482be7e7871 # v4.2.1
+      - name: Install Cargo Deny
+        run: cargo install cargo-deny
+      - name: Run Cargo Deny (advisories)
+        run: cargo deny --manifest-path ./Cargo.toml check advisories
