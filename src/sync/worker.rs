@@ -5,7 +5,7 @@
 //! can apply filtering logic to store only the desired data if necessary into a
 //! local or remote storage
 
-use std::sync::{OnceLock, atomic::AtomicU64};
+use std::sync::{Arc, OnceLock, atomic::AtomicU64};
 
 use axum::async_trait;
 use diesel::{Connection, ExpressionMethods, RunQueryDsl, insert_into};
@@ -123,7 +123,10 @@ impl CheckpointWorker {
 
 #[async_trait]
 impl Worker for CheckpointWorker {
-    async fn process_checkpoint(&self, checkpoint: CheckpointData) -> anyhow::Result<()> {
+    type Error = anyhow::Error;
+    type Message = ();
+
+    async fn process_checkpoint(&self, checkpoint: Arc<CheckpointData>) -> anyhow::Result<()> {
         METRICS
             .get()
             .expect("metrics global should be initialized")
@@ -132,8 +135,8 @@ impl Worker for CheckpointWorker {
 
         let mut created_objects = Vec::new();
         let mut deleted_addresses = Vec::new();
-        for checkpoint_tx in checkpoint.transactions.into_iter() {
-            if self.tx_touches_stardust_objects(&checkpoint_tx)? {
+        for checkpoint_tx in checkpoint.transactions.iter() {
+            if self.tx_touches_stardust_objects(checkpoint_tx)? {
                 deleted_addresses.extend(
                     checkpoint_tx
                         .removed_objects_pre_version()
@@ -142,9 +145,9 @@ impl Worker for CheckpointWorker {
                 created_objects.extend(
                     checkpoint_tx
                         .output_objects
-                        .into_iter()
+                        .iter()
                         .filter(|obj| obj.is_shared())
-                        .filter_map(|obj| StoredObject::try_from(obj).ok()),
+                        .filter_map(|obj| StoredObject::try_from(obj.clone()).ok()),
                 );
             }
         }

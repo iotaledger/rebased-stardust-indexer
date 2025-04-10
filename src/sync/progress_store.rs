@@ -28,6 +28,8 @@ impl SqliteProgressStore {
 
 #[async_trait]
 impl ProgressStore for SqliteProgressStore {
+    type Error = anyhow::Error;
+
     async fn load(&mut self, task_name: String) -> anyhow::Result<CheckpointSequenceNumber> {
         let mut conn = self.pool.get_connection()?;
 
