@@ -5,9 +5,11 @@
 
 use std::collections::HashMap;
 
-use iota_data_ingestion_core::{DataIngestionMetrics, IndexerExecutor, ReaderOptions, WorkerPool};
+use iota_data_ingestion_core::{
+    DataIngestionMetrics, IndexerExecutor, IngestionError, ReaderOptions, WorkerPool,
+};
 use iota_types::messages_checkpoint::CheckpointSequenceNumber;
-use tokio::{sync::oneshot, task::JoinHandle};
+use tokio::task::JoinHandle;
 use tokio_util::sync::CancellationToken;
 
 use crate::{
@@ -26,12 +28,9 @@ type ExecutorProgress = HashMap<String, CheckpointSequenceNumber>;
 /// to gracefully shutdown it
 #[derive(Debug)]
 pub struct Indexer {
-    // TODO: This should be replaced with a CancellationToken
-    // https://github.com/iotaledger/iota/issues/4383
-    shutdown_tx: oneshot::Sender<()>,
-    handle: JoinHandle<anyhow::Result<ExecutorProgress>>,
+    handle: JoinHandle<Result<ExecutorProgress, IngestionError>>,
     prometheus_handle: JoinHandle<anyhow::Result<()>>,
-    prom_cancel_token: CancellationToken,
+    cancel_token: CancellationToken,
 }
 
 impl Indexer {
@@ -42,14 +41,9 @@ impl Indexer {
         indexer_config: Box<IndexerConfig>,
     ) -> Result<Self, anyhow::Error> {
         // Set up the Prometheus metrics service
-        let prom_cancel_token = CancellationToken::new();
+        let cancel_token = CancellationToken::new();
         let (registry, prom_handle) =
-            spawn_prometheus_server(indexer_config.metrics_address, prom_cancel_token.clone())?;
-
-        // Notify the IndexerExecutor to gracefully shutdown
-        // NOTE: this will be replaced by a CancellationToken once this issue will be
-        // resolved: https://github.com/iotaledger/iota/issues/4383
-        let (exit_sender, exit_receiver) = tokio::sync::oneshot::channel();
+            spawn_prometheus_server(indexer_config.metrics_address, cancel_token.clone())?;
 
         // The IndexerExecutor handles the Sync and Fetch of checkpoints from a Fullnode
         let mut executor = IndexerExecutor::new(
@@ -61,6 +55,7 @@ impl Indexer {
             // MAX_CHECKPOINTS_IN_PROGRESS`, where MAX_CHECKPOINTS_IN_PROGRESS = 10000
             1,
             DataIngestionMetrics::new(&registry),
+            cancel_token.clone(),
         );
 
         // Register the CheckpointWorker which will handle the CheckpointData once
@@ -69,6 +64,7 @@ impl Indexer {
             CheckpointWorker::new(pool, indexer_config.package_id),
             "primary".to_owned(),
             indexer_config.download_queue_size,
+            Default::default(),
         );
         executor.register(worker).await?;
 
@@ -84,14 +80,12 @@ impl Indexer {
                 data_limit: indexer_config.checkpoint_processing_batch_data_limit,
                 ..Default::default()
             },
-            exit_receiver,
         ));
 
         Ok(Self {
-            shutdown_tx: exit_sender,
             handle,
             prometheus_handle: prom_handle,
-            prom_cancel_token,
+            cancel_token,
         })
     }
 
@@ -100,8 +94,7 @@ impl Indexer {
     #[tracing::instrument(name = "Indexer", skip(self), err)]
     pub async fn graceful_shutdown(self) -> anyhow::Result<()> {
         tracing::info!("Received shutdown Signal");
-        _ = self.shutdown_tx.send(());
-        self.prom_cancel_token.cancel();
+        self.cancel_token.cancel();
         tracing::info!("Wait for task to shutdown");
         self.handle
             .await?
