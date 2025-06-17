@@ -29,10 +29,10 @@ jobs:
       - name: Tag built image
         run: |
           docker tag rebased-stardust-indexer:latest iotaledger/stardust-indexer:latest
-          docker tag rebased-stardust-indexer:latest iotaledger/stardust-indexer:${{ github.sha }}
+          docker tag rebased-stardust-indexer:latest iotaledger/stardust-indexer:${{ github.ref_name }}
 
       # Push the Docker image to the registry
       - name: Push image
         run: |
           docker push iotaledger/stardust-indexer:latest
-          docker push iotaledger/stardust-indexer:${{ github.sha }}
+          docker push iotaledger/stardust-indexer:${{ github.ref_name }}
