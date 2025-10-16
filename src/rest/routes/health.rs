@@ -28,12 +28,12 @@ use crate::{
 pub(crate) async fn health(Extension(state): Extension<State>) -> Result<HealthResponse, ApiError> {
     let mut conn = state.connection_pool.get_connection().map_err(|e| {
         error!("failed to get connection: {e}");
-        ApiError::ServiceUnavailable(format!("failed to get connection: {}", e))
+        ApiError::ServiceUnavailable(format!("failed to get connection: {e}"))
     })?;
 
     let objects_count = objects.count().get_result(&mut conn).map_err(|e| {
         error!("failed to count objects: {e}");
-        ApiError::ServiceUnavailable(format!("failed to count objects: {}", e))
+        ApiError::ServiceUnavailable(format!("failed to count objects: {e}"))
     })?;
 
     let basic_objects_count = objects

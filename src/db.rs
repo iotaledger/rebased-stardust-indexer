@@ -113,8 +113,8 @@ impl ConnectionPool {
             Name::ProgressStore => "PROGRESS_STORE_DB_URL",
         };
 
-        let database_url =
-            env::var(db_url_env_var).unwrap_or_else(|_| panic!("{db_url_env_var} must be set"));
+        let database_url = env::var(db_url_env_var)
+            .unwrap_or_else(|_| panic!("the {db_url_env_var} environment variable must be set"));
         Self::new_with_url(&database_url, pool_config, db_name)
     }
 

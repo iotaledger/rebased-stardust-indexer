@@ -104,7 +104,7 @@ fn stored_objects_to_nft_outputs(
             iota_types::stardust::output::nft::NftOutput::try_from(stored_object)
                 .map(NftOutput::from)
                 .map_err(|e| {
-                    error!("failed to convert stored object to NFT output: {}", e);
+                    error!("failed to convert stored object to NFT output: {e}");
                     ApiError::InternalServerError
                 })
         })

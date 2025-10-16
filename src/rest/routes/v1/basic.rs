@@ -105,7 +105,7 @@ fn stored_objects_to_basic_outputs(
             iota_types::stardust::output::basic::BasicOutput::try_from(stored_object)
                 .map(BasicOutput::from)
                 .map_err(|e| {
-                    error!("failed to convert stored object to basic output: {}", e);
+                    error!("failed to convert stored object to basic output: {e}");
                     ApiError::InternalServerError
                 })
         })

@@ -31,7 +31,7 @@ fn fetch_stored_objects(
 ) -> Result<Vec<StoredObject>, ApiError> {
     let mut conn = state.connection_pool.get_connection().map_err(|e| {
         error!("failed to get connection: {e}");
-        ApiError::ServiceUnavailable(format!("failed to get connection: {}", e))
+        ApiError::ServiceUnavailable(format!("failed to get connection: {e}"))
     })?;
 
     let mut base_query = objects
@@ -81,8 +81,8 @@ fn fetch_stored_objects(
         .limit(page_size as i64) // Limit the number of results
         .offset(offset as i64) // Skip the results for previous pages
         .load::<StoredObject>(&mut conn)
-        .map_err(|err| {
-            error!("failed to load stored objects: {}", err);
+        .map_err(|e| {
+            error!("failed to load stored objects: {e}");
             ApiError::InternalServerError
         })?;
 
