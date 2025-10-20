@@ -26,8 +26,7 @@ where
         match AxumPath::<T>::from_request_parts(parts, state).await {
             Ok(value) => Ok(Self(value.0)),
             Err(e) => Err(ApiError::BadRequest(format!(
-                "invalid path parameter provided: {}",
-                e
+                "invalid path parameter provided: {e}"
             ))),
         }
     }

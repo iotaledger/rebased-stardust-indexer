@@ -110,7 +110,7 @@ async fn run_indexer(
     // Spawn the REST server
     spawn_rest_server(rest_api_address, connection_pool, token)
         .await
-        .inspect_err(|e| error!("REST server terminated with error: {e}"))?;
+        .inspect_err(|e| error!("rest server terminated with error: {e}"))?;
 
     Ok(())
 }

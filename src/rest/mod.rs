@@ -58,7 +58,7 @@ pub(crate) fn spawn_rest_server(
                 info!("Shutdown signal received.");
             })
             .await
-            .inspect_err(|e| error!("Server encountered an error: {e}"))
+            .inspect_err(|e| error!("server encountered an error: {e}"))
             .ok();
     })
 }
