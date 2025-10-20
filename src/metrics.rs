@@ -73,7 +73,7 @@ pub(crate) fn spawn_prometheus_server(
         // Attempt to bind the socket
         let listener = tokio::net::TcpListener::bind(socket_addr)
             .await
-            .map_err(|e| anyhow::anyhow!("Failed to bind to socket {socket_addr}: {e}"))?;
+            .map_err(|e| anyhow::anyhow!("failed to bind to socket {socket_addr}: {e}"))?;
 
         info!("Listening on: {socket_addr}");
 
@@ -88,7 +88,7 @@ pub(crate) fn spawn_prometheus_server(
                 info!("Shutdown signal received.");
             })
             .await
-            .map_err(|e| anyhow::anyhow!("Server encountered an error: {e}"))?;
+            .map_err(|e| anyhow::anyhow!("server encountered an error: {e}"))?;
 
         Ok(())
     });
