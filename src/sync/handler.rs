@@ -68,7 +68,7 @@ impl Indexer {
         );
         executor.register(worker).await?;
 
-        let data_ingestion_path = tempfile::tempdir()?.into_path();
+        let data_ingestion_path = tempfile::tempdir()?.keep();
 
         // Run the IndexerExecutor in a separate task
         let handle = tokio::spawn(executor.run(
