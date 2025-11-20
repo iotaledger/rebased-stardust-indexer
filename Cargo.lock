@@ -843,8 +843,8 @@ dependencies = [
 
 [[package]]
 name = "bin-version"
-version = "1.11.0-beta"
-source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0-beta#9b0a5aa6548fde447c1d02dd145fa4cb2b0bfd49"
+version = "1.11.0"
+source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0#f4c3af7e48e5d12b4144fc5de49aec0c88c1da3f"
 dependencies = [
  "const-str",
  "git-version",
@@ -1430,7 +1430,7 @@ dependencies = [
 [[package]]
 name = "consensus-config"
 version = "0.1.0"
-source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0-beta#9b0a5aa6548fde447c1d02dd145fa4cb2b0bfd49"
+source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0#f4c3af7e48e5d12b4144fc5de49aec0c88c1da3f"
 dependencies = [
  "fastcrypto",
  "iota-network-stack",
@@ -2256,7 +2256,7 @@ dependencies = [
 [[package]]
 name = "enum-compat-util"
 version = "0.1.0"
-source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0-beta#9b0a5aa6548fde447c1d02dd145fa4cb2b0bfd49"
+source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0#f4c3af7e48e5d12b4144fc5de49aec0c88c1da3f"
 dependencies = [
  "serde_yaml",
 ]
@@ -3549,7 +3549,7 @@ checksum = "8bb03732005da905c88227371639bf1ad885cc712789c011c31c5fb3ab3ccf02"
 [[package]]
 name = "iota-adapter-latest"
 version = "0.1.0"
-source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0-beta#9b0a5aa6548fde447c1d02dd145fa4cb2b0bfd49"
+source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0#f4c3af7e48e5d12b4144fc5de49aec0c88c1da3f"
 dependencies = [
  "anyhow",
  "bcs",
@@ -3576,8 +3576,8 @@ dependencies = [
 
 [[package]]
 name = "iota-config"
-version = "1.11.0-beta"
-source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0-beta#9b0a5aa6548fde447c1d02dd145fa4cb2b0bfd49"
+version = "1.11.0"
+source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0#f4c3af7e48e5d12b4144fc5de49aec0c88c1da3f"
 dependencies = [
  "anemo",
  "anyhow",
@@ -3641,8 +3641,8 @@ dependencies = [
 
 [[package]]
 name = "iota-data-ingestion-core"
-version = "1.11.0-beta"
-source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0-beta#9b0a5aa6548fde447c1d02dd145fa4cb2b0bfd49"
+version = "1.11.0"
+source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0#f4c3af7e48e5d12b4144fc5de49aec0c88c1da3f"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -3675,8 +3675,8 @@ dependencies = [
 
 [[package]]
 name = "iota-enum-compat-util"
-version = "1.11.0-beta"
-source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0-beta#9b0a5aa6548fde447c1d02dd145fa4cb2b0bfd49"
+version = "1.11.0"
+source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0#f4c3af7e48e5d12b4144fc5de49aec0c88c1da3f"
 dependencies = [
  "serde_yaml",
 ]
@@ -3684,7 +3684,7 @@ dependencies = [
 [[package]]
 name = "iota-execution"
 version = "0.1.0"
-source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0-beta#9b0a5aa6548fde447c1d02dd145fa4cb2b0bfd49"
+source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0#f4c3af7e48e5d12b4144fc5de49aec0c88c1da3f"
 dependencies = [
  "iota-adapter-latest",
  "iota-move-natives-latest",
@@ -3701,8 +3701,8 @@ dependencies = [
 
 [[package]]
 name = "iota-framework"
-version = "1.11.0-beta"
-source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0-beta#9b0a5aa6548fde447c1d02dd145fa4cb2b0bfd49"
+version = "1.11.0"
+source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0#f4c3af7e48e5d12b4144fc5de49aec0c88c1da3f"
 dependencies = [
  "bcs",
  "iota-types",
@@ -3714,8 +3714,8 @@ dependencies = [
 
 [[package]]
 name = "iota-framework-snapshot"
-version = "1.11.0-beta"
-source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0-beta#9b0a5aa6548fde447c1d02dd145fa4cb2b0bfd49"
+version = "1.11.0"
+source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0#f4c3af7e48e5d12b4144fc5de49aec0c88c1da3f"
 dependencies = [
  "anyhow",
  "bcs",
@@ -3730,8 +3730,8 @@ dependencies = [
 
 [[package]]
 name = "iota-genesis-common"
-version = "1.11.0-beta"
-source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0-beta#9b0a5aa6548fde447c1d02dd145fa4cb2b0bfd49"
+version = "1.11.0"
+source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0#f4c3af7e48e5d12b4144fc5de49aec0c88c1da3f"
 dependencies = [
  "iota-execution",
  "iota-protocol-config",
@@ -3741,8 +3741,8 @@ dependencies = [
 
 [[package]]
 name = "iota-http"
-version = "1.11.0-beta"
-source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0-beta#9b0a5aa6548fde447c1d02dd145fa4cb2b0bfd49"
+version = "1.11.0"
+source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0#f4c3af7e48e5d12b4144fc5de49aec0c88c1da3f"
 dependencies = [
  "bytes",
  "http",
@@ -3761,8 +3761,8 @@ dependencies = [
 
 [[package]]
 name = "iota-json"
-version = "1.11.0-beta"
-source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0-beta#9b0a5aa6548fde447c1d02dd145fa4cb2b0bfd49"
+version = "1.11.0"
+source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0#f4c3af7e48e5d12b4144fc5de49aec0c88c1da3f"
 dependencies = [
  "anyhow",
  "bcs",
@@ -3778,8 +3778,8 @@ dependencies = [
 
 [[package]]
 name = "iota-json-rpc-api"
-version = "1.11.0-beta"
-source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0-beta#9b0a5aa6548fde447c1d02dd145fa4cb2b0bfd49"
+version = "1.11.0"
+source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0#f4c3af7e48e5d12b4144fc5de49aec0c88c1da3f"
 dependencies = [
  "anyhow",
  "fastcrypto",
@@ -3798,8 +3798,8 @@ dependencies = [
 
 [[package]]
 name = "iota-json-rpc-types"
-version = "1.11.0-beta"
-source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0-beta#9b0a5aa6548fde447c1d02dd145fa4cb2b0bfd49"
+version = "1.11.0"
+source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0#f4c3af7e48e5d12b4144fc5de49aec0c88c1da3f"
 dependencies = [
  "anyhow",
  "bcs",
@@ -3833,8 +3833,8 @@ dependencies = [
 
 [[package]]
 name = "iota-keys"
-version = "1.11.0-beta"
-source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0-beta#9b0a5aa6548fde447c1d02dd145fa4cb2b0bfd49"
+version = "1.11.0"
+source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0#f4c3af7e48e5d12b4144fc5de49aec0c88c1da3f"
 dependencies = [
  "anyhow",
  "bip32",
@@ -3854,8 +3854,8 @@ dependencies = [
 
 [[package]]
 name = "iota-macros"
-version = "1.11.0-beta"
-source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0-beta#9b0a5aa6548fde447c1d02dd145fa4cb2b0bfd49"
+version = "1.11.0"
+source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0#f4c3af7e48e5d12b4144fc5de49aec0c88c1da3f"
 dependencies = [
  "futures",
  "iota-proc-macros",
@@ -3865,8 +3865,8 @@ dependencies = [
 
 [[package]]
 name = "iota-metrics"
-version = "1.11.0-beta"
-source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0-beta#9b0a5aa6548fde447c1d02dd145fa4cb2b0bfd49"
+version = "1.11.0"
+source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0#f4c3af7e48e5d12b4144fc5de49aec0c88c1da3f"
 dependencies = [
  "anemo",
  "anemo-tower",
@@ -3891,8 +3891,8 @@ dependencies = [
 
 [[package]]
 name = "iota-move-build"
-version = "1.11.0-beta"
-source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0-beta#9b0a5aa6548fde447c1d02dd145fa4cb2b0bfd49"
+version = "1.11.0"
+source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0#f4c3af7e48e5d12b4144fc5de49aec0c88c1da3f"
 dependencies = [
  "anyhow",
  "fastcrypto",
@@ -3914,7 +3914,7 @@ dependencies = [
 [[package]]
 name = "iota-move-natives-latest"
 version = "0.1.0"
-source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0-beta#9b0a5aa6548fde447c1d02dd145fa4cb2b0bfd49"
+source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0#f4c3af7e48e5d12b4144fc5de49aec0c88c1da3f"
 dependencies = [
  "bcs",
  "better_any",
@@ -3936,8 +3936,8 @@ dependencies = [
 
 [[package]]
 name = "iota-names"
-version = "1.11.0-beta"
-source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0-beta#9b0a5aa6548fde447c1d02dd145fa4cb2b0bfd49"
+version = "1.11.0"
+source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0#f4c3af7e48e5d12b4144fc5de49aec0c88c1da3f"
 dependencies = [
  "anyhow",
  "bcs",
@@ -3949,8 +3949,8 @@ dependencies = [
 
 [[package]]
 name = "iota-network-stack"
-version = "1.11.0-beta"
-source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0-beta#9b0a5aa6548fde447c1d02dd145fa4cb2b0bfd49"
+version = "1.11.0"
+source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0#f4c3af7e48e5d12b4144fc5de49aec0c88c1da3f"
 dependencies = [
  "anemo",
  "bcs",
@@ -3979,8 +3979,8 @@ dependencies = [
 
 [[package]]
 name = "iota-open-rpc"
-version = "1.11.0-beta"
-source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0-beta#9b0a5aa6548fde447c1d02dd145fa4cb2b0bfd49"
+version = "1.11.0"
+source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0#f4c3af7e48e5d12b4144fc5de49aec0c88c1da3f"
 dependencies = [
  "schemars",
  "serde",
@@ -3990,8 +3990,8 @@ dependencies = [
 
 [[package]]
 name = "iota-open-rpc-macros"
-version = "1.11.0-beta"
-source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0-beta#9b0a5aa6548fde447c1d02dd145fa4cb2b0bfd49"
+version = "1.11.0"
+source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0#f4c3af7e48e5d12b4144fc5de49aec0c88c1da3f"
 dependencies = [
  "derive-syn-parse",
  "itertools 0.13.0",
@@ -4003,14 +4003,14 @@ dependencies = [
 
 [[package]]
 name = "iota-package-management"
-version = "1.11.0-beta"
-source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0-beta#9b0a5aa6548fde447c1d02dd145fa4cb2b0bfd49"
+version = "1.11.0"
+source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0#f4c3af7e48e5d12b4144fc5de49aec0c88c1da3f"
 dependencies = [
  "anyhow",
  "iota-framework-snapshot",
  "iota-json-rpc-types",
  "iota-protocol-config",
- "iota-sdk 1.11.0-beta",
+ "iota-sdk 1.11.0",
  "iota-types",
  "move-core-types",
  "move-package",
@@ -4020,8 +4020,8 @@ dependencies = [
 
 [[package]]
 name = "iota-package-resolver"
-version = "1.11.0-beta"
-source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0-beta#9b0a5aa6548fde447c1d02dd145fa4cb2b0bfd49"
+version = "1.11.0"
+source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0#f4c3af7e48e5d12b4144fc5de49aec0c88c1da3f"
 dependencies = [
  "async-trait",
  "bcs",
@@ -4036,8 +4036,8 @@ dependencies = [
 
 [[package]]
 name = "iota-proc-macros"
-version = "1.11.0-beta"
-source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0-beta#9b0a5aa6548fde447c1d02dd145fa4cb2b0bfd49"
+version = "1.11.0"
+source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0#f4c3af7e48e5d12b4144fc5de49aec0c88c1da3f"
 dependencies = [
  "msim-macros",
  "proc-macro2",
@@ -4047,8 +4047,8 @@ dependencies = [
 
 [[package]]
 name = "iota-protocol-config"
-version = "1.11.0-beta"
-source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0-beta#9b0a5aa6548fde447c1d02dd145fa4cb2b0bfd49"
+version = "1.11.0"
+source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0#f4c3af7e48e5d12b4144fc5de49aec0c88c1da3f"
 dependencies = [
  "clap",
  "iota-protocol-config-macros",
@@ -4062,8 +4062,8 @@ dependencies = [
 
 [[package]]
 name = "iota-protocol-config-macros"
-version = "1.11.0-beta"
-source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0-beta#9b0a5aa6548fde447c1d02dd145fa4cb2b0bfd49"
+version = "1.11.0"
+source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0#f4c3af7e48e5d12b4144fc5de49aec0c88c1da3f"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -4072,8 +4072,8 @@ dependencies = [
 
 [[package]]
 name = "iota-rest-api"
-version = "1.11.0-beta"
-source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0-beta#9b0a5aa6548fde447c1d02dd145fa4cb2b0bfd49"
+version = "1.11.0"
+source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0#f4c3af7e48e5d12b4144fc5de49aec0c88c1da3f"
 dependencies = [
  "anyhow",
  "axum 0.8.6",
@@ -4153,8 +4153,8 @@ dependencies = [
 
 [[package]]
 name = "iota-sdk"
-version = "1.11.0-beta"
-source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0-beta#9b0a5aa6548fde447c1d02dd145fa4cb2b0bfd49"
+version = "1.11.0"
+source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0#f4c3af7e48e5d12b4144fc5de49aec0c88c1da3f"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -4187,8 +4187,8 @@ dependencies = [
 
 [[package]]
 name = "iota-simulator"
-version = "1.11.0-beta"
-source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0-beta#9b0a5aa6548fde447c1d02dd145fa4cb2b0bfd49"
+version = "1.11.0"
+source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0#f4c3af7e48e5d12b4144fc5de49aec0c88c1da3f"
 dependencies = [
  "anemo",
  "anemo-tower",
@@ -4210,8 +4210,8 @@ dependencies = [
 
 [[package]]
 name = "iota-storage"
-version = "1.11.0-beta"
-source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0-beta#9b0a5aa6548fde447c1d02dd145fa4cb2b0bfd49"
+version = "1.11.0"
+source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0#f4c3af7e48e5d12b4144fc5de49aec0c88c1da3f"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -4259,8 +4259,8 @@ dependencies = [
 
 [[package]]
 name = "iota-transaction-builder"
-version = "1.11.0-beta"
-source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0-beta#9b0a5aa6548fde447c1d02dd145fa4cb2b0bfd49"
+version = "1.11.0"
+source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0#f4c3af7e48e5d12b4144fc5de49aec0c88c1da3f"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -4276,8 +4276,8 @@ dependencies = [
 
 [[package]]
 name = "iota-types"
-version = "1.11.0-beta"
-source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0-beta#9b0a5aa6548fde447c1d02dd145fa4cb2b0bfd49"
+version = "1.11.0"
+source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0#f4c3af7e48e5d12b4144fc5de49aec0c88c1da3f"
 dependencies = [
  "anemo",
  "anyhow",
@@ -4342,7 +4342,7 @@ dependencies = [
 [[package]]
 name = "iota-verifier-latest"
 version = "0.1.0"
-source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0-beta#9b0a5aa6548fde447c1d02dd145fa4cb2b0bfd49"
+source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0#f4c3af7e48e5d12b4144fc5de49aec0c88c1da3f"
 dependencies = [
  "iota-types",
  "move-abstract-interpreter",
@@ -4973,7 +4973,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fd01039851e82f8799046eabbb354056283fb265c8ec0996af940f4e85a380ff"
 dependencies = [
  "serde",
- "toml 0.8.19",
+ "toml 0.8.20",
 ]
 
 [[package]]
@@ -5068,7 +5068,7 @@ dependencies = [
 [[package]]
 name = "move-abstract-interpreter"
 version = "0.1.0"
-source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0-beta#9b0a5aa6548fde447c1d02dd145fa4cb2b0bfd49"
+source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0#f4c3af7e48e5d12b4144fc5de49aec0c88c1da3f"
 dependencies = [
  "move-binary-format",
  "move-bytecode-verifier-meter",
@@ -5077,12 +5077,12 @@ dependencies = [
 [[package]]
 name = "move-abstract-stack"
 version = "0.0.1"
-source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0-beta#9b0a5aa6548fde447c1d02dd145fa4cb2b0bfd49"
+source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0#f4c3af7e48e5d12b4144fc5de49aec0c88c1da3f"
 
 [[package]]
 name = "move-binary-format"
 version = "0.0.3"
-source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0-beta#9b0a5aa6548fde447c1d02dd145fa4cb2b0bfd49"
+source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0#f4c3af7e48e5d12b4144fc5de49aec0c88c1da3f"
 dependencies = [
  "anyhow",
  "enum-compat-util",
@@ -5097,12 +5097,12 @@ dependencies = [
 [[package]]
 name = "move-borrow-graph"
 version = "0.0.1"
-source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0-beta#9b0a5aa6548fde447c1d02dd145fa4cb2b0bfd49"
+source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0#f4c3af7e48e5d12b4144fc5de49aec0c88c1da3f"
 
 [[package]]
 name = "move-bytecode-source-map"
 version = "0.1.0"
-source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0-beta#9b0a5aa6548fde447c1d02dd145fa4cb2b0bfd49"
+source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0#f4c3af7e48e5d12b4144fc5de49aec0c88c1da3f"
 dependencies = [
  "anyhow",
  "bcs",
@@ -5118,7 +5118,7 @@ dependencies = [
 [[package]]
 name = "move-bytecode-utils"
 version = "0.1.0"
-source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0-beta#9b0a5aa6548fde447c1d02dd145fa4cb2b0bfd49"
+source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0#f4c3af7e48e5d12b4144fc5de49aec0c88c1da3f"
 dependencies = [
  "anyhow",
  "indexmap 2.12.0",
@@ -5132,7 +5132,7 @@ dependencies = [
 [[package]]
 name = "move-bytecode-verifier"
 version = "0.1.0"
-source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0-beta#9b0a5aa6548fde447c1d02dd145fa4cb2b0bfd49"
+source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0#f4c3af7e48e5d12b4144fc5de49aec0c88c1da3f"
 dependencies = [
  "move-abstract-interpreter",
  "move-abstract-stack",
@@ -5147,7 +5147,7 @@ dependencies = [
 [[package]]
 name = "move-bytecode-verifier-meter"
 version = "0.1.0"
-source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0-beta#9b0a5aa6548fde447c1d02dd145fa4cb2b0bfd49"
+source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0#f4c3af7e48e5d12b4144fc5de49aec0c88c1da3f"
 dependencies = [
  "move-binary-format",
  "move-core-types",
@@ -5157,7 +5157,7 @@ dependencies = [
 [[package]]
 name = "move-command-line-common"
 version = "0.1.0"
-source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0-beta#9b0a5aa6548fde447c1d02dd145fa4cb2b0bfd49"
+source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0#f4c3af7e48e5d12b4144fc5de49aec0c88c1da3f"
 dependencies = [
  "anyhow",
  "bcs",
@@ -5177,7 +5177,7 @@ dependencies = [
 [[package]]
 name = "move-compiler"
 version = "0.0.1"
-source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0-beta#9b0a5aa6548fde447c1d02dd145fa4cb2b0bfd49"
+source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0#f4c3af7e48e5d12b4144fc5de49aec0c88c1da3f"
 dependencies = [
  "anyhow",
  "bcs",
@@ -5212,7 +5212,7 @@ dependencies = [
 [[package]]
 name = "move-core-types"
 version = "0.0.4"
-source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0-beta#9b0a5aa6548fde447c1d02dd145fa4cb2b0bfd49"
+source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0#f4c3af7e48e5d12b4144fc5de49aec0c88c1da3f"
 dependencies = [
  "anyhow",
  "bcs",
@@ -5236,7 +5236,7 @@ dependencies = [
 [[package]]
 name = "move-coverage"
 version = "0.1.0"
-source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0-beta#9b0a5aa6548fde447c1d02dd145fa4cb2b0bfd49"
+source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0#f4c3af7e48e5d12b4144fc5de49aec0c88c1da3f"
 dependencies = [
  "anyhow",
  "bcs",
@@ -5257,7 +5257,7 @@ dependencies = [
 [[package]]
 name = "move-disassembler"
 version = "0.1.0"
-source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0-beta#9b0a5aa6548fde447c1d02dd145fa4cb2b0bfd49"
+source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0#f4c3af7e48e5d12b4144fc5de49aec0c88c1da3f"
 dependencies = [
  "anyhow",
  "bcs",
@@ -5278,7 +5278,7 @@ dependencies = [
 [[package]]
 name = "move-docgen"
 version = "0.1.0"
-source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0-beta#9b0a5aa6548fde447c1d02dd145fa4cb2b0bfd49"
+source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0#f4c3af7e48e5d12b4144fc5de49aec0c88c1da3f"
 dependencies = [
  "anyhow",
  "clap",
@@ -5301,7 +5301,7 @@ dependencies = [
 [[package]]
 name = "move-ir-to-bytecode"
 version = "0.1.0"
-source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0-beta#9b0a5aa6548fde447c1d02dd145fa4cb2b0bfd49"
+source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0#f4c3af7e48e5d12b4144fc5de49aec0c88c1da3f"
 dependencies = [
  "anyhow",
  "codespan-reporting",
@@ -5319,7 +5319,7 @@ dependencies = [
 [[package]]
 name = "move-ir-to-bytecode-syntax"
 version = "0.1.0"
-source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0-beta#9b0a5aa6548fde447c1d02dd145fa4cb2b0bfd49"
+source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0#f4c3af7e48e5d12b4144fc5de49aec0c88c1da3f"
 dependencies = [
  "anyhow",
  "hex",
@@ -5332,7 +5332,7 @@ dependencies = [
 [[package]]
 name = "move-ir-types"
 version = "0.1.0"
-source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0-beta#9b0a5aa6548fde447c1d02dd145fa4cb2b0bfd49"
+source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0#f4c3af7e48e5d12b4144fc5de49aec0c88c1da3f"
 dependencies = [
  "hex",
  "move-command-line-common",
@@ -5345,7 +5345,7 @@ dependencies = [
 [[package]]
 name = "move-model-2"
 version = "0.1.0"
-source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0-beta#9b0a5aa6548fde447c1d02dd145fa4cb2b0bfd49"
+source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0#f4c3af7e48e5d12b4144fc5de49aec0c88c1da3f"
 dependencies = [
  "anyhow",
  "bcs",
@@ -5366,7 +5366,7 @@ dependencies = [
 [[package]]
 name = "move-package"
 version = "0.1.0"
-source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0-beta#9b0a5aa6548fde447c1d02dd145fa4cb2b0bfd49"
+source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0#f4c3af7e48e5d12b4144fc5de49aec0c88c1da3f"
 dependencies = [
  "anyhow",
  "clap",
@@ -5402,7 +5402,7 @@ dependencies = [
 [[package]]
 name = "move-proc-macros"
 version = "0.1.0"
-source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0-beta#9b0a5aa6548fde447c1d02dd145fa4cb2b0bfd49"
+source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0#f4c3af7e48e5d12b4144fc5de49aec0c88c1da3f"
 dependencies = [
  "quote",
  "syn 2.0.98",
@@ -5411,7 +5411,7 @@ dependencies = [
 [[package]]
 name = "move-stdlib-natives"
 version = "0.1.1"
-source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0-beta#9b0a5aa6548fde447c1d02dd145fa4cb2b0bfd49"
+source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0#f4c3af7e48e5d12b4144fc5de49aec0c88c1da3f"
 dependencies = [
  "hex",
  "move-binary-format",
@@ -5426,7 +5426,7 @@ dependencies = [
 [[package]]
 name = "move-symbol-pool"
 version = "0.1.0"
-source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0-beta#9b0a5aa6548fde447c1d02dd145fa4cb2b0bfd49"
+source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0#f4c3af7e48e5d12b4144fc5de49aec0c88c1da3f"
 dependencies = [
  "once_cell",
  "phf",
@@ -5436,7 +5436,7 @@ dependencies = [
 [[package]]
 name = "move-trace-format"
 version = "0.0.1"
-source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0-beta#9b0a5aa6548fde447c1d02dd145fa4cb2b0bfd49"
+source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0#f4c3af7e48e5d12b4144fc5de49aec0c88c1da3f"
 dependencies = [
  "move-binary-format",
  "move-core-types",
@@ -5447,7 +5447,7 @@ dependencies = [
 [[package]]
 name = "move-vm-config"
 version = "0.1.0"
-source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0-beta#9b0a5aa6548fde447c1d02dd145fa4cb2b0bfd49"
+source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0#f4c3af7e48e5d12b4144fc5de49aec0c88c1da3f"
 dependencies = [
  "move-binary-format",
  "once_cell",
@@ -5456,7 +5456,7 @@ dependencies = [
 [[package]]
 name = "move-vm-profiler"
 version = "0.1.0"
-source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0-beta#9b0a5aa6548fde447c1d02dd145fa4cb2b0bfd49"
+source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0#f4c3af7e48e5d12b4144fc5de49aec0c88c1da3f"
 dependencies = [
  "move-vm-config",
  "once_cell",
@@ -5466,7 +5466,7 @@ dependencies = [
 [[package]]
 name = "move-vm-runtime"
 version = "0.1.0"
-source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0-beta#9b0a5aa6548fde447c1d02dd145fa4cb2b0bfd49"
+source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0#f4c3af7e48e5d12b4144fc5de49aec0c88c1da3f"
 dependencies = [
  "better_any",
  "fail",
@@ -5486,7 +5486,7 @@ dependencies = [
 [[package]]
 name = "move-vm-test-utils"
 version = "0.1.0"
-source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0-beta#9b0a5aa6548fde447c1d02dd145fa4cb2b0bfd49"
+source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0#f4c3af7e48e5d12b4144fc5de49aec0c88c1da3f"
 dependencies = [
  "anyhow",
  "move-binary-format",
@@ -5500,7 +5500,7 @@ dependencies = [
 [[package]]
 name = "move-vm-types"
 version = "0.1.0"
-source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0-beta#9b0a5aa6548fde447c1d02dd145fa4cb2b0bfd49"
+source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0#f4c3af7e48e5d12b4144fc5de49aec0c88c1da3f"
 dependencies = [
  "bcs",
  "move-binary-format",
@@ -5533,7 +5533,7 @@ dependencies = [
  "socket2 0.5.8",
  "tap",
  "tokio-util 0.7.13 (git+https://github.com/iotaledger/tokio-madsim-fork.git?branch=msim-1.43.0)",
- "toml 0.8.19",
+ "toml 0.8.20",
  "tracing",
  "tracing-subscriber",
 ]
@@ -6763,8 +6763,8 @@ dependencies = [
 
 [[package]]
 name = "prometheus-closure-metric"
-version = "1.11.0-beta"
-source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0-beta#9b0a5aa6548fde447c1d02dd145fa4cb2b0bfd49"
+version = "1.11.0"
+source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0#f4c3af7e48e5d12b4144fc5de49aec0c88c1da3f"
 dependencies = [
  "anyhow",
  "prometheus",
@@ -8077,8 +8077,8 @@ dependencies = [
 
 [[package]]
 name = "shared-crypto"
-version = "1.11.0-beta"
-source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0-beta#9b0a5aa6548fde447c1d02dd145fa4cb2b0bfd49"
+version = "1.11.0"
+source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0#f4c3af7e48e5d12b4144fc5de49aec0c88c1da3f"
 dependencies = [
  "bcs",
  "eyre",
@@ -8318,7 +8318,7 @@ dependencies = [
 [[package]]
 name = "starfish-config"
 version = "0.1.0"
-source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0-beta#9b0a5aa6548fde447c1d02dd145fa4cb2b0bfd49"
+source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0#f4c3af7e48e5d12b4144fc5de49aec0c88c1da3f"
 dependencies = [
  "blake3",
  "fastcrypto",
@@ -8599,8 +8599,8 @@ dependencies = [
 
 [[package]]
 name = "telemetry-subscribers"
-version = "1.11.0-beta"
-source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0-beta#9b0a5aa6548fde447c1d02dd145fa4cb2b0bfd49"
+version = "1.11.0"
+source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0#f4c3af7e48e5d12b4144fc5de49aec0c88c1da3f"
 dependencies = [
  "atomic_float",
  "bytes",
@@ -8924,9 +8924,9 @@ dependencies = [
 
 [[package]]
 name = "toml"
-version = "0.8.19"
+version = "0.8.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a1ed1f98e3fdc28d6d910e6737ae6ab1a93bf1985935a1193e68f93eeb68d24e"
+checksum = "cd87a5cdd6ffab733b2f74bc4fd7ee5fff6634124999ac278c35fc78c6120148"
 dependencies = [
  "serde",
  "serde_spanned",
@@ -9296,8 +9296,8 @@ dependencies = [
 
 [[package]]
 name = "typed-store"
-version = "1.11.0-beta"
-source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0-beta#9b0a5aa6548fde447c1d02dd145fa4cb2b0bfd49"
+version = "1.11.0"
+source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0#f4c3af7e48e5d12b4144fc5de49aec0c88c1da3f"
 dependencies = [
  "bcs",
  "bincode",
@@ -9323,8 +9323,8 @@ dependencies = [
 
 [[package]]
 name = "typed-store-derive"
-version = "1.11.0-beta"
-source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0-beta#9b0a5aa6548fde447c1d02dd145fa4cb2b0bfd49"
+version = "1.11.0"
+source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0#f4c3af7e48e5d12b4144fc5de49aec0c88c1da3f"
 dependencies = [
  "itertools 0.13.0",
  "proc-macro2",
@@ -9334,8 +9334,8 @@ dependencies = [
 
 [[package]]
 name = "typed-store-error"
-version = "1.11.0-beta"
-source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0-beta#9b0a5aa6548fde447c1d02dd145fa4cb2b0bfd49"
+version = "1.11.0"
+source = "git+https://github.com/iotaledger/iota.git?tag=v1.11.0#f4c3af7e48e5d12b4144fc5de49aec0c88c1da3f"
 dependencies = [
  "serde",
  "thiserror 1.0.69",

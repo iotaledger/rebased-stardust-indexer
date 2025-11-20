@@ -21,8 +21,8 @@ diesel_migrations = { version = "2.2.0", features = ["sqlite"] }
 
 dotenvy = "0.15"
 http = "1.2.0"
-iota-types = { git = "https://github.com/iotaledger/iota.git", tag = "v1.11.0-beta", version = "1.11.0-beta" }
-iota-data-ingestion-core = { git = "https://github.com/iotaledger/iota.git", tag = "v1.11.0-beta", version = "1.11.0-beta" }
+iota-types = { git = "https://github.com/iotaledger/iota.git", tag = "v1.11.0", version = "1.11.0" }
+iota-data-ingestion-core = { git = "https://github.com/iotaledger/iota.git", tag = "v1.11.0", version = "1.11.0" }
 num_enum = "0.7.3"
 prometheus = "0.14.0"
 serde = "1.0.215"

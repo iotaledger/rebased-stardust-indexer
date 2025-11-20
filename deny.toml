@@ -58,13 +58,8 @@ ignore = [
     "RUSTSEC-2025-0012",
     # Logging user input may result in poisoning logs with ANSI escape sequences
     "RUSTSEC-2025-0055",
-
-    # these shall be fixed once we update the iota dependencies
-    #
-    # tokio: Broadcast channel calls clone in parallel, but does not require `Sync`
-    "RUSTSEC-2025-0023",
-    # protobuf: Crash due to uncontrolled recursion in protobuf crate
-    "RUSTSEC-2024-0437"
+    # number_prefix unmaintained
+    "RUSTSEC-2025-0119"
 ]
 
 # Threshold for security vulnerabilities, any vulnerability with a CVSS score
@@ -93,7 +88,6 @@ allow = [
     "ISC",
     "CC0-1.0",
     "0BSD",
-    "LicenseRef-ring",
     "Unlicense",
     "BSL-1.0",
     "OpenSSL",
