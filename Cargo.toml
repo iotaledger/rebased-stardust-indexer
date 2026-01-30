@@ -1,6 +1,6 @@
 [package]
 name = "rebased-stardust-indexer"
-version = "0.5.3"
+version = "0.5.4"
 edition = "2021"
 
 [dependencies]
@@ -21,8 +21,8 @@ diesel_migrations = { version = "2.2.0", features = ["sqlite"] }
 
 dotenvy = "0.15"
 http = "1.2.0"
-iota-types = { git = "https://github.com/iotaledger/iota.git", tag = "v1.11.0", version = "1.11.0" }
-iota-data-ingestion-core = { git = "https://github.com/iotaledger/iota.git", tag = "v1.11.0", version = "1.11.0" }
+iota-types = { git = "https://github.com/iotaledger/iota.git", tag = "v1.16.0-alpha", version = "1.16.0-alpha" }
+iota-data-ingestion-core = { git = "https://github.com/iotaledger/iota.git", tag = "v1.16.0-alpha", version = "1.16.0-alpha" }
 num_enum = "0.7.3"
 prometheus = "0.14.0"
 serde = "1.0.215"
@@ -31,8 +31,8 @@ thiserror = "2.0.3"
 tokio = { version = "1.48", features = ["rt-multi-thread", "signal"] }
 tokio-util = "0.7.13"
 tower-http = { version = "0.6.2", features = ["cors"] }
-tracing = { version = "0.1.41", features = ["attributes"] }
-tracing-subscriber = "0.3.19"
+tracing = { version = "0.1.44", features = ["attributes"] }
+tracing-subscriber = "0.3.22"
 url = "2.5.4"
 utoipa = "5.2.0"
 utoipa-swagger-ui = { version = "8.0.3", features = ["axum"] }
