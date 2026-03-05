@@ -1,6 +1,6 @@
 [package]
 name = "rebased-stardust-indexer"
-version = "0.5.4"
+version = "0.5.5"
 edition = "2021"
 
 [dependencies]
@@ -21,8 +21,8 @@ diesel_migrations = { version = "2.2.0", features = ["sqlite"] }
 
 dotenvy = "0.15"
 http = "1.2.0"
-iota-types = { git = "https://github.com/iotaledger/iota.git", tag = "v1.16.0-alpha", version = "1.16.0-alpha" }
-iota-data-ingestion-core = { git = "https://github.com/iotaledger/iota.git", tag = "v1.16.0-alpha", version = "1.16.0-alpha" }
+iota-types = { git = "https://github.com/iotaledger/iota.git", tag = "v1.18.1-rc", version = "1.18.1-rc" }
+iota-data-ingestion-core = { git = "https://github.com/iotaledger/iota.git", tag = "v1.18.1-rc", version = "1.18.1-rc" }
 num_enum = "0.7.3"
 prometheus = "0.14.0"
 serde = "1.0.215"
