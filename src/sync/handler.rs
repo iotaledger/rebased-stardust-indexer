@@ -3,13 +3,8 @@
 
 //! Checkpoint syncing Handlers for the Indexer
 
-use std::collections::HashMap;
-
-use iota_data_ingestion_core::{
-    DataIngestionMetrics, IndexerExecutor, IngestionError, ReaderOptions, WorkerPool,
-};
-use iota_types::messages_checkpoint::CheckpointSequenceNumber;
-use tokio::task::JoinHandle;
+use iota_data_ingestion_core::{DataIngestionMetrics, IndexerExecutor, ReaderOptions, WorkerPool};
+use tokio::task::JoinSet;
 use tokio_util::sync::CancellationToken;
 
 use crate::{
@@ -17,8 +12,6 @@ use crate::{
     metrics::spawn_prometheus_server,
     sync::{IndexerConfig, progress_store::SqliteProgressStore, worker::CheckpointWorker},
 };
-
-type ExecutorProgress = HashMap<String, CheckpointSequenceNumber>;
 
 /// The `Indexer` encapsulates the main logic behind the checkpoint
 /// synchronization from a Fullnode.
@@ -28,8 +21,7 @@ type ExecutorProgress = HashMap<String, CheckpointSequenceNumber>;
 /// to gracefully shutdown it
 #[derive(Debug)]
 pub struct Indexer {
-    handle: JoinHandle<Result<ExecutorProgress, IngestionError>>,
-    prometheus_handle: JoinHandle<anyhow::Result<()>>,
+    tasks: JoinSet<anyhow::Result<()>>,
     cancel_token: CancellationToken,
 }
 
@@ -42,8 +34,13 @@ impl Indexer {
     ) -> Result<Self, anyhow::Error> {
         // Set up the Prometheus metrics service
         let cancel_token = CancellationToken::new();
-        let (registry, prom_handle) =
-            spawn_prometheus_server(indexer_config.metrics_address, cancel_token.clone())?;
+        let mut tasks = JoinSet::new();
+
+        let registry = spawn_prometheus_server(
+            indexer_config.metrics_address,
+            cancel_token.clone(),
+            &mut tasks,
+        )?;
 
         // The IndexerExecutor handles the Sync and Fetch of checkpoints from a Fullnode
         let mut executor = IndexerExecutor::new(
@@ -71,38 +68,43 @@ impl Indexer {
         let data_ingestion_path = tempfile::tempdir()?.keep();
 
         // Run the IndexerExecutor in a separate task
-        let handle = tokio::spawn(executor.run(
-            data_ingestion_path,
-            Some(indexer_config.remote_store_url.to_string()),
-            vec![],
-            ReaderOptions {
-                batch_size: indexer_config.download_queue_size,
-                data_limit: indexer_config.checkpoint_processing_batch_data_limit,
-                ..Default::default()
-            },
-        ));
+        tasks.spawn(async move {
+            executor
+                .run(
+                    data_ingestion_path,
+                    Some(indexer_config.remote_store_url.to_string()),
+                    vec![],
+                    ReaderOptions {
+                        batch_size: indexer_config.download_queue_size,
+                        data_limit: indexer_config.checkpoint_processing_batch_data_limit,
+                        ..Default::default()
+                    },
+                )
+                .await?;
+            Ok(())
+        });
 
         Ok(Self {
-            handle,
-            prometheus_handle: prom_handle,
+            tasks,
             cancel_token,
         })
     }
 
-    /// Sends a Shutdown Signal to the `IndexerExecutor` and wait for the task
+    /// Sends a Shutdown Signal to the `IndexerExecutor` and wait for all tasks
     /// to finish, this will block the execution
     #[tracing::instrument(name = "Indexer", skip(self), err)]
-    pub async fn graceful_shutdown(self) -> anyhow::Result<()> {
+    pub async fn graceful_shutdown(mut self) -> anyhow::Result<()> {
         tracing::info!("Received shutdown Signal");
         self.cancel_token.cancel();
-        tracing::info!("Wait for task to shutdown");
-        self.handle
-            .await?
-            .inspect(|_| tracing::info!("Task shutdown successfully"))?;
-        self.prometheus_handle
-            .await?
-            .inspect(|_| tracing::info!("Task shutdown successfully"))?;
-
+        tracing::info!("Waiting for all tasks to shutdown");
+        while let Some(result) = self.tasks.join_next().await {
+            match result {
+                Ok(Ok(_)) => tracing::info!("Task shutdown successfully"),
+                Ok(Err(e)) => tracing::error!("Task returned an error: {e}"),
+                Err(e) => tracing::error!("Task panicked or was cancelled: {e}"),
+            }
+        }
+        tracing::info!("All tasks shutdown successfully");
         Ok(())
     }
 }
