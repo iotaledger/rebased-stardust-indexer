@@ -3,7 +3,10 @@
 
 //! Checkpoint syncing Handlers for the Indexer
 
-use iota_data_ingestion_core::{DataIngestionMetrics, IndexerExecutor, ReaderOptions, WorkerPool};
+use iota_data_ingestion_core::{
+    DataIngestionMetrics, IndexerExecutor, ReaderOptions, WorkerPool,
+    reader::v2::{CheckpointReaderConfig, RemoteUrl},
+};
 use tokio::task::JoinSet;
 use tokio_util::sync::CancellationToken;
 
@@ -65,21 +68,20 @@ impl Indexer {
         );
         executor.register(worker).await?;
 
-        let data_ingestion_path = tempfile::tempdir()?.keep();
-
         // Run the IndexerExecutor in a separate task
         tasks.spawn(async move {
             executor
-                .run(
-                    data_ingestion_path,
-                    Some(indexer_config.remote_store_url.to_string()),
-                    vec![],
-                    ReaderOptions {
+                .run_with_config(CheckpointReaderConfig {
+                    remote_store_url: Some(RemoteUrl::Fullnode(
+                        indexer_config.remote_store_url.into(),
+                    )),
+                    reader_options: ReaderOptions {
                         batch_size: indexer_config.download_queue_size,
                         data_limit: indexer_config.checkpoint_processing_batch_data_limit,
                         ..Default::default()
                     },
-                )
+                    ..Default::default()
+                })
                 .await?;
             Ok(())
         });
