@@ -187,7 +187,7 @@ fn setup_shutdown_signal(indexer_handle: Indexer) -> (CancellationToken, JoinHan
         _ = indexer_handle
             .graceful_shutdown()
             .await
-            .inspect_err(|e| error!("indexer shutdown error: {e:?}"));
+            .inspect_err(|e| error!("indexer shutdown error: {e}"));
     });
 
     (token, handle)
