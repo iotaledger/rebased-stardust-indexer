@@ -12,7 +12,7 @@ use prometheus::{
     IntCounter, IntGauge, Registry, register_int_counter_with_registry,
     register_int_gauge_with_registry,
 };
-use tokio::task::JoinHandle;
+use tokio::task::JoinSet;
 use tokio_util::sync::CancellationToken;
 use tracing::info;
 
@@ -64,12 +64,13 @@ const METRICS_ROUTE: &str = "/metrics";
 pub(crate) fn spawn_prometheus_server(
     socket_addr: SocketAddr,
     cancel_token: CancellationToken,
-) -> Result<(Registry, JoinHandle<Result<(), anyhow::Error>>), anyhow::Error> {
+    tasks: &mut JoinSet<anyhow::Result<()>>,
+) -> Result<Registry, anyhow::Error> {
     let registry = Registry::default();
     METRICS.get_or_init(|| Arc::new(Metrics::new(&registry)));
 
     let extension = registry.clone();
-    let handle = tokio::spawn(async move {
+    tasks.spawn(async move {
         // Attempt to bind the socket
         let listener = tokio::net::TcpListener::bind(socket_addr)
             .await
@@ -93,7 +94,7 @@ pub(crate) fn spawn_prometheus_server(
         Ok(())
     });
 
-    Ok((registry, handle))
+    Ok(registry)
 }
 
 /// Retrieve the Prometheus metrics of the service.
@@ -126,10 +127,12 @@ mod tests {
         let bind_port = get_free_port_for_testing_only().unwrap();
         let cancel_token = CancellationToken::new();
 
-        // Start the Prometheus server in a separate task and capture the join handle
-        let (_registry, server_task) = spawn_prometheus_server(
+        // Start the Prometheus server in a separate task
+        let mut tasks = JoinSet::new();
+        let _registry = spawn_prometheus_server(
             format!("127.0.0.1:{}", bind_port).parse().unwrap(),
             cancel_token.clone(),
+            &mut tasks,
         )
         .unwrap();
 
@@ -173,6 +176,8 @@ mod tests {
         );
 
         cancel_token.cancel();
-        let _ = server_task.await.unwrap();
+        while let Some(result) = tasks.join_next().await {
+            result.unwrap().unwrap();
+        }
     }
 }

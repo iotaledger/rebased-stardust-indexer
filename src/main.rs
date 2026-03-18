@@ -5,7 +5,10 @@ use std::{fs, path::Path};
 
 use clap::{Parser, Subcommand};
 use db::{ConnectionPool, ConnectionPoolConfig, Name};
-use tokio::signal::unix::{SignalKind, signal};
+use tokio::{
+    signal::unix::{SignalKind, signal},
+    task::JoinHandle,
+};
 use tracing::{Level, error, info};
 use tracing_subscriber::FmtSubscriber;
 use utoipa::OpenApi;
@@ -105,12 +108,17 @@ async fn run_indexer(
         Indexer::init(connection_pool.clone(), progress_store_pool, config).await?;
 
     // Set up a CTRL+C handler for graceful shutdown
-    let token = setup_shutdown_signal(indexer_handle);
+    let (token, shutdown_handle) = setup_shutdown_signal(indexer_handle);
 
     // Spawn the REST server
     spawn_rest_server(rest_api_address, connection_pool, token)
         .await
         .inspect_err(|e| error!("rest server terminated with error: {e}"))?;
+
+    // Wait for the graceful shutdown to complete
+    _ = shutdown_handle
+        .await
+        .inspect_err(|e| error!("shutdown task failed: {e}"));
 
     Ok(())
 }
@@ -158,11 +166,11 @@ fn init_tracing(log_level: Level) {
 }
 
 /// Set up a CTRL+C handler for graceful shutdown
-fn setup_shutdown_signal(indexer_handle: Indexer) -> CancellationToken {
+fn setup_shutdown_signal(indexer_handle: Indexer) -> (CancellationToken, JoinHandle<()>) {
     let token = CancellationToken::new();
     let cloned_token = token.clone();
 
-    tokio::task::spawn(async move {
+    let handle = tokio::task::spawn(async move {
         let mut sigint = signal(SignalKind::interrupt()).expect("failed to listen for SIGINT");
         let mut sigterm = signal(SignalKind::terminate()).expect("failed to listen for SIGTERM");
 
@@ -176,8 +184,11 @@ fn setup_shutdown_signal(indexer_handle: Indexer) -> CancellationToken {
         }
 
         cloned_token.cancel();
-        indexer_handle.graceful_shutdown().await
+        _ = indexer_handle
+            .graceful_shutdown()
+            .await
+            .inspect_err(|e| error!("indexer shutdown error: {e:?}"));
     });
 
-    token
+    (token, handle)
 }
