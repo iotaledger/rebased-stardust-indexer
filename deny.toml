@@ -62,6 +62,11 @@ ignore = [
     "RUSTSEC-2025-0134",
     # rustls-webpki CRL Distribution Point matching issue; constrained by upstream anemo
     "RUSTSEC-2026-0049",
+    # rustls-webpki vulnerabilities pinned via
+    # rustls-platform-verifier 0.3.4 → jsonrpsee 0.24.8 (upstream iota constraint).
+    "RUSTSEC-2026-0098",
+    "RUSTSEC-2026-0099",
+    "RUSTSEC-2026-0104",
 ]
 
 # Threshold for security vulnerabilities, any vulnerability with a CVSS score
