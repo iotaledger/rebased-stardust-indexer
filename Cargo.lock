@@ -6829,7 +6829,7 @@ dependencies = [
 
 [[package]]
 name = "rebased-stardust-indexer"
-version = "0.5.7"
+version = "0.5.8"
 dependencies = [
  "anyhow",
  "axum 0.7.9",
