@@ -58,15 +58,6 @@ ignore = [
     "RUSTSEC-2025-0012",
     # bincode is unmaintained
     "RUSTSEC-2025-0141",
-    # rustls-pemfile is unmaintained
-    "RUSTSEC-2025-0134",
-    # rustls-webpki CRL Distribution Point matching issue; constrained by upstream anemo
-    "RUSTSEC-2026-0049",
-    # rustls-webpki vulnerabilities pinned via
-    # rustls-platform-verifier 0.3.4 → jsonrpsee 0.24.8 (upstream iota constraint).
-    "RUSTSEC-2026-0098",
-    "RUSTSEC-2026-0099",
-    "RUSTSEC-2026-0104",
 ]
 
 # Threshold for security vulnerabilities, any vulnerability with a CVSS score
@@ -99,8 +90,9 @@ allow = [
     "BSL-1.0",
     "Unicode-3.0",
     "CDDL-1.0",
-    "Zlib"
-    # "Apache-2.0 WITH LLVM-exception",
+    "Zlib",
+    "CDLA-Permissive-2.0",
+    "Apache-2.0 WITH LLVM-exception",
 ]
 # The confidence threshold for detecting a license from license text.
 # The higher the value, the more closely the license text must be to the
@@ -239,7 +231,7 @@ allow-git = [
     "https://github.com/iotaledger/tokio-madsim-fork.git",
     "https://github.com/zhiburt/tabled.git",
     "https://github.com/iotaledger/iota-rust-sdk.git",
-    "https://github.com/bmwill/openapiv3.git",
+    "https://github.com/iotaledger/flamegraph-svg"
 ]
 
 [sources.allow-org]
